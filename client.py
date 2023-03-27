@@ -7,6 +7,19 @@ from sklearn.metrics import log_loss
 
 import utils
 
+model = LogisticRegression(
+    penalty="l2",
+    max_iter=1,  # local epoch
+    warm_start=True,  # prevent refreshing weights when fitting
+)
+
+utils.set_initial_params(model)
+
+(X_train, y_train), (X_test, y_test) = utils.load_mnist()
+
+partition_id = np.random.choice(10)
+(X_train, y_train) = utils.partition(X_train, y_train, 10)[partition_id]
+
 class MnistClient(fl.client.NumPyClient):
     def get_parameters(self, config):  # type: ignore
         return utils.get_model_parameters(model)
@@ -27,16 +40,4 @@ class MnistClient(fl.client.NumPyClient):
 
 
 if __name__ == "__main__":
-
-    (X_train, y_train), (X_test, y_test) = utils.load_mnist()
-
-    partition_id = np.random.choice(10)
-    (X_train, y_train) = utils.partition(X_train, y_train, 10)[partition_id]
-
-    model = LogisticRegression(
-        penalty="l2",
-        max_iter=1,  # local epoch
-        warm_start=True,  # prevent refreshing weights when fitting
-    )
-
-    utils.set_initial_params(model)
+    fl.client.start_numpy_client(server_address="0.0.0.0:8080", client=MnistClient())

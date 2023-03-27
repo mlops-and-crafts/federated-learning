@@ -1,2 +1,5 @@
 flwr
 scikit-learn
+openml
+torch 
+torchvision
