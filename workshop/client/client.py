@@ -4,6 +4,7 @@ import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 
 import torch
+import torchvision
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.transforms as transforms
@@ -15,6 +16,8 @@ import flwr as fl
 import time
 import logging
 
+
+
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
@@ -23,10 +26,21 @@ def load_data():
     transform = transforms.Compose(
     [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
     )
-    trainset = CIFAR10(".", train=True, download=True, transform=transform)
-    testset = CIFAR10(".", train=False, download=True, transform=transform)
-    trainloader = DataLoader(trainset, batch_size=32, shuffle=True)
-    testloader = DataLoader(testset, batch_size=32)
+
+    cifar = torchvision.datasets.CIFAR10(root='./data', train=True,
+                                            download=True, transform=transform)
+
+    train = list(range(0, 100))
+    test = list(range(100, 150))
+
+    trainset = torch.utils.data.Subset(cifar, train)
+    testset = torch.utils.data.Subset(cifar, test)
+
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=4,
+                                                shuffle=True)
+    testloader = torch.utils.data.DataLoader(testset, batch_size=4,
+                                                shuffle=True)
+
     num_examples = {"trainset" : len(trainset), "testset" : len(testset)}
     return trainloader, testloader, num_examples
 
@@ -86,11 +100,13 @@ class CifarClient(fl.client.NumPyClient):
         return [val.cpu().numpy() for _, val in net.state_dict().items()]
 
     def set_parameters(self, parameters):
+        logging.info("Setting params from server")
         params_dict = zip(net.state_dict().keys(), parameters)
         state_dict = OrderedDict({k: torch.tensor(v) for k, v in params_dict})
         net.load_state_dict(state_dict, strict=True)
 
     def fit(self, parameters, config):
+        logging.info("Fitting on data")
         self.set_parameters(parameters)
         train(net, trainloader, epochs=1)
         return self.get_parameters(config={}), num_examples["trainset"], {}
@@ -102,7 +118,9 @@ class CifarClient(fl.client.NumPyClient):
     
 if __name__ == "__main__":
     while True:
-        try:
+        try: 
+            # local: "0.0.0.0:8080"
+            # docker: "federated-learning-server-1:8080"
             fl.client.start_numpy_client(server_address="federated-learning-server-1:8080", client=CifarClient())
             break
         except Exception as e:
