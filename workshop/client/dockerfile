@@ -1,5 +1,7 @@
 FROM python:3.9.16-slim
 
+ARG ARG1
+
 WORKDIR /usr/src/app
 
 COPY . .
@@ -8,4 +10,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 EXPOSE 8080
 
-CMD ["python3", "client.py"] 
+CMD ["python3", "client.py", "--arg1", "${ARG1}"]

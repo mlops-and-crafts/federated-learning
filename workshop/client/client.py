@@ -11,7 +11,10 @@ import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from torchvision.datasets import CIFAR10
 
+import numpy as np
+from numpy import random
 import flwr as fl
+import sys
 
 import time
 import logging
@@ -21,7 +24,7 @@ import logging
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-def load_data():
+def load_data(left_coordinate):
     """Load CIFAR-10 (training and test set)."""
     transform = transforms.Compose(
     [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
@@ -30,8 +33,11 @@ def load_data():
     cifar = torchvision.datasets.CIFAR10(root='./data', train=True,
                                             download=True, transform=transform)
 
-    train = list(range(0, 100))
-    test = list(range(100, 150))
+    x = left_coordinate  ## int number from 0 to 55500
+    dataset_indexes = np.arange(x,x+150)
+    random.shuffle(dataset_indexes)
+    train = list(dataset_indexes)[0:len(dataset_indexes)*0.8]
+    test = list(dataset_indexes)[len(dataset_indexes)*0.8:]
 
     trainset = torch.utils.data.Subset(cifar, train)
     testset = torch.utils.data.Subset(cifar, test)
@@ -93,9 +99,14 @@ class Net(nn.Module):
 
 # Load model and data
 net = Net().to(DEVICE)
-trainloader, testloader, num_examples = load_data()
+# trainloader, testloader, num_examples = load_data()
 
 class CifarClient(fl.client.NumPyClient):
+    def __init__(self, left_coordinate):
+        self.left_coordinate = left_coordinate
+        self.trainloader, self.testloader, self.num_examples = load_data(self.left_coordinate)
+    
+
     def get_parameters(self, config):
         return [val.cpu().numpy() for _, val in net.state_dict().items()]
 
@@ -108,20 +119,21 @@ class CifarClient(fl.client.NumPyClient):
     def fit(self, parameters, config):
         logging.info("Fitting on data")
         self.set_parameters(parameters)
-        train(net, trainloader, epochs=1)
-        return self.get_parameters(config={}), num_examples["trainset"], {}
+        train(net, self.trainloader, epochs=1)
+        return self.get_parameters(config={}), self.num_examples["trainset"], {}
 
     def evaluate(self, parameters, config):
         self.set_parameters(parameters)
-        loss, accuracy = test(net, testloader)
-        return float(loss), num_examples["testset"], {"accuracy": float(accuracy)}
+        loss, accuracy = test(net, self.testloader)
+        return float(loss), self.num_examples["testset"], {"accuracy": float(accuracy)}
     
 if __name__ == "__main__":
     while True:
         try: 
+            left_coordinate = int(sys.argv[1])
             # local: "0.0.0.0:8080"
             # docker: "federated-learning-server-1:8080"
-            fl.client.start_numpy_client(server_address="federated-learning-server-1:8080", client=CifarClient())
+            fl.client.start_numpy_client(server_address="federated-learning-server-1:8080", client=CifarClient(left_coordinate))
             break
         except Exception as e:
             logging.warning("Could not connect to server: sleeping for 5 seconds...")

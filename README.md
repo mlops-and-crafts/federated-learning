@@ -14,6 +14,16 @@ Add requirements.txt, conda.yml, pyproject.toml, Docker image or Binder/Google C
 * Clone the repository
 * Start { TOOL } and navigate to the workshop folder
 
+start docker
+in client directory run by specifying ARG1= int from 0 to 55500:
+docker build --build-arg ARG1=int -t client .
+in server directory run:
+docker build -t sever . 
+in project directory run:
+docker compose up
+
+
+
 ## Video record
 Re-watch [this video](link)
 
