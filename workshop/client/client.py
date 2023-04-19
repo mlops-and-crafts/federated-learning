@@ -35,9 +35,10 @@ def load_data(left_coordinate):
 
     x = left_coordinate  ## int number from 0 to 55500
     dataset_indexes = np.arange(x,x+150)
+    random.seed(10)
     random.shuffle(dataset_indexes)
-    train = list(dataset_indexes)[0:len(dataset_indexes)*0.8]
-    test = list(dataset_indexes)[len(dataset_indexes)*0.8:]
+    train = list(dataset_indexes)[0:int(len(dataset_indexes)*0.8)]
+    test = list(dataset_indexes)[int(len(dataset_indexes)*0.8):]
 
     trainset = torch.utils.data.Subset(cifar, train)
     testset = torch.utils.data.Subset(cifar, test)
@@ -129,11 +130,17 @@ class CifarClient(fl.client.NumPyClient):
     
 if __name__ == "__main__":
     while True:
+        # print(sys.argv)
         try: 
-            left_coordinate = int(sys.argv[1])
-            # local: "0.0.0.0:8080"
-            # docker: "federated-learning-server-1:8080"
-            fl.client.start_numpy_client(server_address="federated-learning-server-1:8080", client=CifarClient(left_coordinate))
+            left_coordinate_index = sys.argv.index('--arg1')
+            left_coordinate = sys.argv[left_coordinate_index + 1]
+            # print(left_coordinate)
+
+            left_coordinate = int(left_coordinate)
+        # local: "0.0.0.0:8080"
+        # docker: "federated-learning-server-1:8080"
+            client = CifarClient(left_coordinate)
+            fl.client.start_numpy_client(server_address="federated-learning-server-1:8080", client=client)
             break
         except Exception as e:
             logging.warning("Could not connect to server: sleeping for 5 seconds...")
