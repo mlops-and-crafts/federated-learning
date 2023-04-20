@@ -130,17 +130,15 @@ class CifarClient(fl.client.NumPyClient):
     
 if __name__ == "__main__":
     while True:
-        # print(sys.argv)
         try: 
             left_coordinate_index = sys.argv.index('--arg1')
             left_coordinate = sys.argv[left_coordinate_index + 1]
-            # print(left_coordinate)
-
             left_coordinate = int(left_coordinate)
         # local: "0.0.0.0:8080"
         # docker: "federated-learning-server-1:8080"
             client = CifarClient(left_coordinate)
             fl.client.start_numpy_client(server_address="federated-learning-server-1:8080", client=client)
+            # fl.client.start_numpy_client(server_address="192.168.1.178:8080", client=client)
             break
         except Exception as e:
             logging.warning("Could not connect to server: sleeping for 5 seconds...")

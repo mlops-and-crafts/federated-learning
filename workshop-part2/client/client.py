@@ -5,6 +5,8 @@ from sklearn.datasets import fetch_california_housing
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
+import logging
+import time
 
 
 class CaliforniaHousingClient(fl.client.NumPyClient):
@@ -46,5 +48,13 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
 
 if __name__ == "__main__":
     # Start Flower client
-    client = CaliforniaHousingClient()
-    fl.client.start_numpy_client(server_address="federated-learning-server-1:8080", client=client)
+    # client = CaliforniaHousingClient()
+    # fl.client.start_numpy_client(server_address="federated-learning-server-1:8080", client=client)
+    while True:
+    # try: 
+        client = CaliforniaHousingClient()
+        fl.client.start_numpy_client(server_address="localhost:8080", client=client)
+        break
+        # except Exception as e:
+            # logging.warning("Could not connect to server: sleeping for 5 seconds...")
+            # time.sleep(5)

@@ -15,8 +15,9 @@ Add requirements.txt, conda.yml, pyproject.toml, Docker image or Binder/Google C
 * Start { TOOL } and navigate to the workshop folder
 
 start docker
+colima start --memory 4 ## increase colima vm memory up to 4 GB
 in client directory run by specifying ARG1= int from 0 to 55500:
-docker build --build-arg ARG1=int -t client .
+docker build --build-arg ARG1=10 -t client .
 in server directory run:
 docker build -t sever . 
 in project directory run:

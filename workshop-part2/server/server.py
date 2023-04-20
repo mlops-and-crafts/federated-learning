@@ -45,11 +45,17 @@ def main() -> None:
     model = LinearRegression()
 
     # Run the Flower server
+    # fl.server.start_server("0.0.0.0:8080",
+        # FlowerClient(model),
+        # config=fl.server.ServerConfig(num_rounds=5),
+    # )
+
     fl.server.start_server(
-        "0.0.0.0:8080",
-        FlowerClient(model),
-        config=fl.server.ServerConfig(num_rounds=5),
+        server_address="0.0.0.0:8080",
+        config={"num_rounds": 3, "round_duration": 30},
+        strategy = FlowerClient(model),
     )
+
     # fl.server.start_server(server_address="0.0.0.0:8080", config=fl.server.ServerConfig(num_rounds=5))
 
 
