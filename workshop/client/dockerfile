@@ -8,7 +8,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 EXPOSE 8080
 
-ARG ARG1
-ENV ARG1=$ARG1
-
-CMD python3 client.py --arg1 $ARG1
+CMD ["python3", "client.py"] 
