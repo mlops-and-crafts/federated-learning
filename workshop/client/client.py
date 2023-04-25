@@ -137,7 +137,7 @@ if __name__ == "__main__":
         # local: "0.0.0.0:8080"
         # docker: "federated-learning-server-1:8080"
             client = CifarClient(left_coordinate)
-            fl.client.start_numpy_client(server_address="federated-learning-server-1:8080", client=client)
+            fl.client.start_numpy_client(server_address="0.0.0.0:8080", client=client)
             # fl.client.start_numpy_client(server_address="192.168.1.178:8080", client=client)
             break
         except Exception as e:

@@ -1,67 +1,42 @@
 import flwr as fl
-import numpy as np
+from flwr.common import NDArrays, Scalar
+from sklearn.metrics import mean_squared_error
 from sklearn.linear_model import LinearRegression
 from sklearn.datasets import fetch_california_housing
-
-# Load the data
-data = fetch_california_housing()
-X = data["data"]
-y = data["target"]
-
-# Define Flower client
-class FlowerClient(fl.client.NumPyClient):
-    def __init__(self, model):
-        self.model = model
-
-    def get_parameters(self):
-        """Return current model parameters."""
-        return self.model.coef_, self.model.intercept_
-
-    def fit(self, parameters, config):
-        """Update the client model."""
-        self.model.coef_ = parameters[0]
-        self.model.intercept_ = parameters[1]
-        return self.train(config)
-
-    def evaluate(self, parameters, config):
-        """Evaluate the current model parameters."""
-        self.model.coef_ = parameters[0]
-        self.model.intercept_ = parameters[1]
-        return self.test(config)
-
-    def train(self, config):
-        """Train the model using the client's data."""
-        self.model.fit(X, y)
-        return self.get_parameters(), len(X), {}
-
-    def test(self, config):
-        """Test the model using the client's data."""
-        score = self.model.score(X, y)
-        return len(X), score, {}
+from typing import Dict
+import numpy as np
+from utils import set_model_params, set_initial_params
 
 
-def main() -> None:
-    # Initialize a linear regression model
-    model = LinearRegression()
 
-    # Run the Flower server
-    # fl.server.start_server("0.0.0.0:8080",
-        # FlowerClient(model),
-        # config=fl.server.ServerConfig(num_rounds=5),
-    # )
-
-    fl.server.start_server(
-        server_address="0.0.0.0:8080",
-        config={"num_rounds": 3, "round_duration": 30},
-        strategy = FlowerClient(model),
-    )
-
-    # fl.server.start_server(server_address="0.0.0.0:8080", config=fl.server.ServerConfig(num_rounds=5))
+def fit_round(server_round: int) -> Dict:
+    """Send round number to client."""
+    return {"server_round": server_round}
 
 
+def get_evaluate_fn(model: LinearRegression):
+    """Return an evaluation function for server-side evaluation."""
+
+    X, y = fetch_california_housing(return_X_y=True)
+    X_test, y_test = X[15000:], y[15000:]
+
+    def evaluate(
+        server_round: int, parameters: NDArrays, config: Dict[str, Scalar]
+    ):
+        set_model_params(model, parameters)
+        mse = mean_squared_error(y_test, model.predict(X_test))
+        r_squared = model.score(X_test, y_test)
+        return r_squared, {"mse": mse}
+
+    return evaluate
+
+# Start Flower server for five rounds of federated learning
 if __name__ == "__main__":
-    main()
-
-
-
-
+    model = LinearRegression()
+    set_initial_params(model)
+    strategy = fl.server.strategy.FedAvg(
+        min_available_clients=2,
+        evaluate_fn=get_evaluate_fn(model),
+        on_fit_config_fn=fit_round,
+    )
+    fl.server.start_server(server_address="localhost:5040", strategy=strategy, config=fl.server.ServerConfig(num_rounds=3))

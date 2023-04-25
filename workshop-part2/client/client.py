@@ -1,12 +1,24 @@
 import flwr as fl
 import numpy as np
-import pandas as pd
 from sklearn.datasets import fetch_california_housing
 from sklearn.linear_model import LinearRegression
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
+import warnings
 import logging
 import time
+
+from utils import set_model_params, set_initial_params
+
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
+
+
+def partition(X: np.ndarray, y: np.ndarray, num_partitions: int):
+    """Split X and y into a number of partitions."""
+    return list(
+        zip(np.array_split(X, num_partitions),
+            np.array_split(y, num_partitions))
+    )
 
 
 class CaliforniaHousingClient(fl.client.NumPyClient):
@@ -14,47 +26,55 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
         self.data = None
         self.target = None
         self.model = LinearRegression()
+        set_initial_params(self.model)
 
-    def get_weights(self):
-        return self.model.coef_, self.model.intercept_
+        X, y = fetch_california_housing(return_X_y=True)
 
-    def fit(self, weights):
-        self.model.coef_ = weights[:-1]
-        self.model.intercept_ = weights[-1]
+        partition_id = np.random.choice(10)
 
-    def train(self):
-        # Load California housing dataset
-        cal_housing = fetch_california_housing()
-        self.data = cal_housing.data
-        self.target = cal_housing.target
+        self.X_train, self.y_train = X[:15000], y[:15000]
+        self.X_test, self.y_test = X[15000:], y[15000:]
 
-        # Split into train and test set
-        X_train, X_test, y_train, y_test = train_test_split(
-            self.data, self.target, test_size=0.2, random_state=123
-        )
+        partition_id = np.random.choice(10)
+        self.X_train, self.y_train = partition(
+            self.X_train, self.y_train, 10)[partition_id]
 
-        # Train the model
-        self.model.fit(X_train, y_train)
+    def get_parameters(self, config):
+        """Returns the paramters of a sklearn LogisticRegression model."""
+        if self.model.fit_intercept:
+            params = [
+                self.model.coef_,
+                self.model.intercept_,
+            ]
+        else:
+            params = [
+                self.model.coef_,
+            ]
+        return params
 
-        # Evaluate the model
-        y_pred_train = self.model.predict(X_train)
-        mse_train = mean_squared_error(y_train, y_pred_train)
-        print(f"Training MSE: {mse_train:.2f}")
+    def fit(self, parameters, config):  # type: ignore
+        set_model_params(self.model, parameters)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            self.model = self.model.fit(self.X_train, self.y_train)
+        print(f"Training finished for round {config['server_round']}")
+        return self.get_parameters(config), len(self.X_train), {}
 
-        y_pred_test = self.model.predict(X_test)
-        mse_test = mean_squared_error(y_test, y_pred_test)
-        print(f"Test MSE: {mse_test:.2f}")
+    def evaluate(self, parameters, config):  # type: ignore
+        set_model_params(self.model, parameters)
+        mse = mean_squared_error(self.y_test, self.model.predict(self.X_test))
+        r_squared = self.model.score(self.X_test, self.y_test)
+        return mse, len(self.X_test), {"r_squared": r_squared}
 
 
 if __name__ == "__main__":
-    # Start Flower client
-    # client = CaliforniaHousingClient()
-    # fl.client.start_numpy_client(server_address="federated-learning-server-1:8080", client=client)
     while True:
-    # try: 
-        client = CaliforniaHousingClient()
-        fl.client.start_numpy_client(server_address="localhost:8080", client=client)
-        break
-        # except Exception as e:
-            # logging.warning("Could not connect to server: sleeping for 5 seconds...")
-            # time.sleep(5)
+        try:
+            client = CaliforniaHousingClient()
+            fl.client.start_numpy_client(
+                server_address="localhost:5040", client=client)
+            break
+        except Exception as e:
+            logging.warning(
+                "Could not connect to server: sleeping for 5 seconds...")
+            time.sleep(5)
