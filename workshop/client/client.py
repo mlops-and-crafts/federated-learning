@@ -6,8 +6,9 @@ from sklearn.metrics import mean_squared_error
 import warnings
 import logging
 import time
+from pathlib import Path
 
-from utils import set_model_params, set_initial_params
+from server_src.utils import set_model_params, set_initial_params
 
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
@@ -72,7 +73,7 @@ if __name__ == "__main__":
         try:
             client = CaliforniaHousingClient()
             fl.client.start_numpy_client(
-                server_address="localhost:5040", client=client)
+                server_address="localhost:5040", client=client, root_certificates=Path(".cache/certificates/ca.crt").read_bytes())
             break
         except Exception as e:
             logging.warning(

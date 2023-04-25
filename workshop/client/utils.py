@@ -1,10 +1,12 @@
 import numpy as np
 
+
 def set_model_params(model, params):
     """Sets the parameters of a sklean Regression model."""
     model.coef_ = params[0]
     if model.fit_intercept:
         model.intercept_ = params[1]
+
 
 def set_initial_params(model):
     """Sets initial parameters as zeros Required since model params are
