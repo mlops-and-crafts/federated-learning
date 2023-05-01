@@ -4,6 +4,8 @@ WORKDIR /usr/src/app
 
 COPY . .
 
+## ADD IP ENV variable
+
 RUN pip install --no-cache-dir -r requirements.txt
 
 EXPOSE 8080
