@@ -4,7 +4,6 @@ from sklearn.metrics import mean_squared_error
 from sklearn.linear_model import LinearRegression
 from sklearn.datasets import fetch_california_housing
 from typing import Dict
-import numpy as np
 from utils import set_model_params, set_initial_params
 
 
