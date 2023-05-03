@@ -6,8 +6,7 @@ WORKDIR /usr/src/app
 COPY . .
 
 ## ADD IP ENV variable
-
-ENV SERVER_ADDRESS=0.0.0.0
+ENV SERVER_ADDRESS=35.240.26.153
 ENV SERVER_PORT=8080
 
 RUN pip install --no-cache-dir -r requirements.txt
