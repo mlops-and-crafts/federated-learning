@@ -62,9 +62,9 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
     def evaluate(self, parameters, config):
         mse = 0.0
         num_examples = 100
-        r_squared = 0
+        dummy = 0
         # Make sure to leave the key name as r-squared
-        metrics = {"r_squared": r_squared}
+        metrics = {"dummy": dummy}
         return mse, num_examples, metrics
 
 
