@@ -7,12 +7,6 @@ from typing import Dict
 from utils import set_model_params, set_initial_params
 
 
-
-def fit_round(server_round: int) -> Dict:
-    """Send round number to client."""
-    return {"server_round": server_round}
-
-
 def get_evaluate_fn(model: LinearRegression):
     """Return an evaluation function for server-side evaluation."""
 
@@ -35,7 +29,6 @@ if __name__ == "__main__":
     set_initial_params(model)
     strategy = fl.server.strategy.FedAvg(
         min_available_clients=2,
-        evaluate_fn=get_evaluate_fn(model),
-        on_fit_config_fn=fit_round,
+        evaluate_fn=get_evaluate_fn(model)
     )
-    fl.server.start_server(server_address="localhost:5040", strategy=strategy, config=fl.server.ServerConfig(num_rounds=3))
+    fl.server.start_server(server_address="0.0.0.0:8080", strategy=strategy, config=fl.server.ServerConfig(num_rounds=3))
