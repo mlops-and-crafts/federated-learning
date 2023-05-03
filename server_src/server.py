@@ -1,6 +1,7 @@
 import flwr as fl
 from sklearn.linear_model import LinearRegression
 from utils import set_initial_params
+from pathlib import Path
 
 
 # def get_evaluate_fn(model: LinearRegression):
@@ -25,4 +26,10 @@ if __name__ == "__main__":
     set_initial_params(model)
     strategy = fl.server.strategy.FedAvg(min_available_clients=2)
     fl.server.start_server(server_address="0.0.0.0:8080",
-                           strategy=strategy, config=fl.server.ServerConfig(num_rounds=3))
+                           strategy=strategy, config=fl.server.ServerConfig(
+                               num_rounds=3),
+                           certificates=(
+                               Path("server_src/.cache/certificates/ca.crt").read_bytes(),
+                               Path("server_src/.cache/certificates/server.pem").read_bytes(),
+                               Path("server_src/.cache/certificates/server.key").read_bytes(),
+                           ))
