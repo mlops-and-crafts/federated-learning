@@ -52,7 +52,6 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
         return params
 
     def fit(self, parameters, config):  # type: ignore
-        print(config)
         set_model_params(self.model, parameters)
 
         with warnings.catch_warnings():
