@@ -7,6 +7,7 @@ cd "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/../
 CA_PASSWORD=notsafe
 
 CERT_DIR=.cache/certificates
+CERT_DIR_CA=.cache/ca_cert
 
 # Generate directories if not exists
 mkdir -p .cache/certificates
@@ -17,6 +18,9 @@ mkdir -p .cache/certificates
 # fi
 
 rm -f $CERT_DIR/*
+rm -f $CERT_DIR_CA/*
+
+mkdir -p $CERT_DIR_CA
 
 # Generate the root certificate authority key and certificate based on key
 openssl genrsa -out $CERT_DIR/ca.key 4096
@@ -26,7 +30,7 @@ openssl req \
     -key $CERT_DIR/ca.key \
     -sha256 \
     -subj "/C=DE/ST=HH/O=CA, Inc." \
-    -days 365 -out $CERT_DIR/ca.crt
+    -days 365 -out $CERT_DIR_CA/ca.crt
 
 # Generate a new private key for the server
 openssl genrsa -out $CERT_DIR/server.key 4096
@@ -42,7 +46,7 @@ openssl req \
 openssl x509 \
     -req \
     -in $CERT_DIR/server.csr \
-    -CA $CERT_DIR/ca.crt \
+    -CA $CERT_DIR_CA/ca.crt \
     -CAkey $CERT_DIR/ca.key \
     -CAcreateserial \
     -out $CERT_DIR/server.pem \

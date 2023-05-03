@@ -29,7 +29,7 @@ if __name__ == "__main__":
                            strategy=strategy, config=fl.server.ServerConfig(
                                num_rounds=3),
                            certificates=(
-                               Path("server_src/.cache/certificates/ca.crt").read_bytes(),
+                               Path("server_src/.cache/ca_cert/ca.crt").read_bytes(),
                                Path("server_src/.cache/certificates/server.pem").read_bytes(),
                                Path("server_src/.cache/certificates/server.key").read_bytes(),
                            ))
