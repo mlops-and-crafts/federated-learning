@@ -7,6 +7,7 @@ import warnings
 import logging
 import time
 from utils import set_model_params, set_initial_params
+import os
 
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
@@ -58,10 +59,9 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
             warnings.simplefilter("ignore")
             self.model = self.model.fit(self.X_train, self.y_train)
 
-        print(f"Training finished for round {config['server_round']}")
         return self.get_parameters(config), len(self.X_train), {}
 
-    def evaluate(self, parameters, config):  # type: ignore
+    def evaluate(self, parameters, config):
         set_model_params(self.model, parameters)
         mse = mean_squared_error(self.y_test, self.model.predict(self.X_test))
         r_squared = self.model.score(self.X_test, self.y_test)
@@ -71,13 +71,16 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
 if __name__ == "__main__":
     while True:
         try:
-            #pick up Ip from
+            # pick up Ip from the os environment or pass them as sys args
+            server_address = os.environ['SERVER_ADDRESS']
+            server_port = os.environ["SERVER_PORT"]
+
             client = CaliforniaHousingClient(partition_id=2)
             fl.client.start_numpy_client(
-                server_address="localhost:5040", client=client)
-                # root_certificates=Path(".cache/certificates/ca.crt").read_bytes())
+                server_address=server_address + ":" + server_port,  client=client)
             break
         except Exception as e:
+            logging.exception(e)
             logging.warning(
                 "Could not connect to server: sleeping for 5 seconds...")
             time.sleep(5)
