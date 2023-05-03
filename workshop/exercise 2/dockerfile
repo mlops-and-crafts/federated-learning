@@ -5,7 +5,8 @@ WORKDIR /usr/src/app
 
 COPY . .
 
-ENV SERVER_ADDRESS = 0.0.0.0
+ENV SERVER_ADDRESS=0.0.0.0
+ENV SERVER_PORT=8080
 
 RUN pip install --no-cache-dir -r requirements.txt
 
@@ -13,4 +14,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 ## EXPOSE the right port
 EXPOSE 
 
-CMD ["python3", "client.py", "${SERVER_ADDRESS}"] 
+CMD ["python3", "client.py"] 

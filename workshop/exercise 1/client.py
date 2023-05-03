@@ -7,6 +7,7 @@ from utils import partition, set_initial_params
 from typing import Dict, List, Tuple
 import logging
 import time
+import os
 
 '''
 You have been tasked in federating the In this exercise we will be covering the basic components of the flower federated learning package.
@@ -96,11 +97,13 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
 if __name__ == "__main__":
     while True:
         try:
-            server_address = "0.0.0.0:8080"  # pick up the server address from system arguments
+            # pick up IP and port from the os environment or pass them as sys args
+            server_address = ""
+            server_port = ""
 
             client = CaliforniaHousingClient(partition_id=2)
             fl.client.start_numpy_client(
-                server_address=server_address, client=client)
+                server_address=server_address + ":" + server_port, client=client)
             break
         except Exception as e:
             logging.warning(
