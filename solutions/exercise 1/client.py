@@ -2,10 +2,10 @@ import flwr as fl
 import numpy as np
 from sklearn.datasets import fetch_california_housing
 from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error
 import warnings
 import logging
 import time
+import os
 from utils import set_model_params, set_initial_params
 
 import ssl
@@ -50,34 +50,37 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
             ]
         return params
 
-    def fit(self, parameters, config):  # type: ignore
-        print(config)
+    def fit(self, parameters, config):
         set_model_params(self.model, parameters)
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             self.model = self.model.fit(self.X_train, self.y_train)
 
-        print(f"Training finished for round {config['server_round']}")
         return self.get_parameters(config), len(self.X_train), {}
 
-    def evaluate(self, parameters, config):  # type: ignore
-        set_model_params(self.model, parameters)
-        mse = mean_squared_error(self.y_test, self.model.predict(self.X_test))
-        r_squared = self.model.score(self.X_test, self.y_test)
-        return mse, len(self.X_test), {"r_squared": r_squared}
+    def evaluate(self, parameters, config):
+        mse = 0.0
+        num_examples = 100
+        r_squared = 0
+        # Make sure to leave the key name as r-squared
+        metrics = {"r_squared": r_squared}
+        return mse, num_examples, metrics
 
 
 if __name__ == "__main__":
     while True:
         try:
-            #pick up Ip from
+            # pick up Ip from the os environment or pass them as sys args
+            server_address = os.environ['SERVER_ADDRESS']
+            server_port = os.environ["SERVER_PORT"]
+
             client = CaliforniaHousingClient(partition_id=2)
             fl.client.start_numpy_client(
-                server_address="localhost:5040", client=client)
-                # root_certificates=Path(".cache/certificates/ca.crt").read_bytes())
+                server_address=server_address + ":" + server_port,  client=client)
             break
         except Exception as e:
+            logging.exception(e)
             logging.warning(
                 "Could not connect to server: sleeping for 5 seconds...")
             time.sleep(5)
