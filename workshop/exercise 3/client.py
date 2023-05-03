@@ -7,7 +7,7 @@ from utils import partition, set_initial_params
 from typing import Dict, List, Tuple
 import logging
 import time
-import os
+import urllib
 
 '''
 There are two categories of evaluation and monitoring in federated learning: server-side and client-side.
@@ -78,9 +78,13 @@ if __name__ == "__main__":
             server_address = ""
             server_port = ""
 
+            # Download the root certificate from here "http://{server_address}:8000/ca.crt" and store it safely
+            # treat it like a secret! You can use urllib to directly read and pass it, or you can download it,
+            # store it somehwere safe and read it in.
+
             client = CaliforniaHousingClient(partition_id=2)
             fl.client.start_numpy_client(
-                server_address=server_address + ":" + server_port, client=client)
+                server_address=server_address + ":" + server_port, client=client, root_certificates="")
             break
         except Exception as e:
             logging.warning(

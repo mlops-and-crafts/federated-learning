@@ -7,7 +7,7 @@ import warnings
 import logging
 import time
 from utils import set_model_params, set_initial_params
-import os
+import urllib
 
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
@@ -74,9 +74,12 @@ if __name__ == "__main__":
             server_address = os.environ['SERVER_ADDRESS']
             server_port = os.environ["SERVER_PORT"]
 
+            with urllib.request.urlopen(f"http://{server_address}:8000/ca.crt") as f:
+                root_certificate = f.read()
+
             client = CaliforniaHousingClient(partition_id=2)
             fl.client.start_numpy_client(
-                server_address=server_address + ":" + server_port,  client=client, root_certificates="")
+                server_address=server_address + ":" + server_port,  client=client, root_certificates=root_certificate)
             break
         except Exception as e:
             logging.exception(e)
