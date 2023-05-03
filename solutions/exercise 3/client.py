@@ -8,6 +8,7 @@ import logging
 import time
 from utils import set_model_params, set_initial_params
 import urllib
+import os
 
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
