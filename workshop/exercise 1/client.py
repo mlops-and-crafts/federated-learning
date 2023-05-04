@@ -49,6 +49,8 @@ We have already written a client class with the skeleton methods below. Your tas
 When you're finished, pick up the server ip address in the file entrypoint (if __name__ = "__main__"). We will be 
 passing these as ENV variables in docker. Also have a look at the dockerfile to make sure you pass the correct IP address and 
 port.
+
+When you're done, feel free to launch your client to check whether it connects to the server!
 """
 
 
