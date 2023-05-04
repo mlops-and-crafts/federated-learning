@@ -4,31 +4,20 @@ import numpy as np
 import flwr as fl
 from sklearn.datasets import fetch_california_housing
 from utils import partition, set_initial_params
-from typing import Dict, List, Tuple
+from typing import Dict, Tuple
 import logging
 import time
 import urllib
 
 '''
-There are two categories of evaluation and monitoring in federated learning: server-side and client-side.
-In general monitoring in different types of drift is very difficult for federated learning, because
-the data stays on the device. You can construct metrics that can be sent to the server, but care
-needs to be taken not to construct numbers that might give away too much information about the data.
+Flower has a built-in functionality to secure communcation with the server through SSL encryption.
 
-To keep things simple for our implementation, we will only be passing the R-squared back to the server, in
-addition to the loss and number of examples.
-
-def evaluate(self, parameters, config): Evaluate the provided parameters using the locally held dataset.
-Returns these outputs:
-    loss (float) - The evaluation loss of the model on the local dataset.
-    num_examples (int) - The number of examples used for evaluation.
-    metrics (Dict[str, Scalar]) - A dictionary mapping arbitrary string keys to values of type bool, bytes, float, int, or str.
-    It can be used to communicate arbitrary values back to the server.
+The exercise here is to pass the root certificate to the client.
 '''
 
 
 class CaliforniaHousingClient(fl.client.NumPyClient):
-    def __init__(self, partition_id: int):
+    def __init__(self):
         self.model = LinearRegression()
 
         # At the beginning of the run the server requests the parameters of the model.
@@ -45,7 +34,7 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
         self.X_train, self.y_train = partition(
             self.X_train, self.y_train, 10)[partition_id]
 
-    def get_parameters(self, config) -> List:
+    def get_parameters(self, config) -> NDArrays:
         """Returns the paramters of a sklearn LinearRegression model."""
 
         parameters = []
@@ -82,7 +71,7 @@ if __name__ == "__main__":
             # treat it like a secret! You can use urllib to directly read and pass it, or you can download it,
             # store it somehwere safe and read it in.
 
-            client = CaliforniaHousingClient(partition_id=2)
+            client = CaliforniaHousingClient()
             fl.client.start_numpy_client(
                 server_address=server_address + ":" + server_port, client=client, root_certificates="")
             break

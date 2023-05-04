@@ -4,7 +4,7 @@ import numpy as np
 import flwr as fl
 from sklearn.datasets import fetch_california_housing
 from utils import partition, set_initial_params
-from typing import Dict, List, Tuple
+from typing import Dict, Tuple
 import logging
 import time
 import os
@@ -28,7 +28,7 @@ Returns these outputs:
 
 
 class CaliforniaHousingClient(fl.client.NumPyClient):
-    def __init__(self, partition_id: int):
+    def __init__(self):
         self.model = LinearRegression()
 
         # At the beginning of the run the server requests the parameters of the model.
@@ -45,7 +45,7 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
         self.X_train, self.y_train = partition(
             self.X_train, self.y_train, 10)[partition_id]
 
-    def get_parameters(self, config) -> List:
+    def get_parameters(self, config) -> NDArrays:
         """Returns the paramters of a sklearn LinearRegression model."""
 
         parameters = []
@@ -78,7 +78,7 @@ if __name__ == "__main__":
             server_address = ""
             server_port = ""
 
-            client = CaliforniaHousingClient(partition_id=2)
+            client = CaliforniaHousingClient()
             fl.client.start_numpy_client(
                 server_address=server_address + ":" + server_port, client=client)
             break
