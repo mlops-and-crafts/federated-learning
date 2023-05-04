@@ -29,4 +29,4 @@ docker compose up
 Re-watch [this video](link)
 
 ## Credits
-This workshop was set up by @mlops-and-crafts and @atroyanovsky TODO ADD SARA
+This workshop was set up by @mlops-and-crafts and @atroyanovsky @saraperric85
