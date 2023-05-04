@@ -9,7 +9,7 @@ import logging
 import time
 import os
 
-'''
+"""
 Imagine you're an engineer tasked with federating a model provided to you by a data scientist.
 In this exercise we will be exploring the basic functionality of the flower library to achieve
 this goal.
@@ -49,11 +49,12 @@ We have already written a client class with the skeleton methods below. Your tas
 When you're finished, pick up the server ip address in the file entrypoint (if __name__ = "__main__"). We will be 
 passing these as ENV variables in docker. Also have a look at the dockerfile to make sure you pass the correct IP address and 
 port.
-'''
+"""
 
 
 class CaliforniaHousingClient(fl.client.NumPyClient):
     def __init__(self):
+        # Initilialise the model
         self.model = LinearRegression()
 
         # At the beginning of the run the server requests the parameters of the model.
@@ -62,13 +63,16 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
 
         X, y = fetch_california_housing(return_X_y=True)
 
+        # Define the data and partition it randomly across "devices"
+
         partition_id = np.random.choice(10)
 
         self.X_train, self.y_train = X[:15000], y[:15000]
         self.X_test, self.y_test = X[15000:], y[15000:]
 
-        self.X_train, self.y_train = partition(
-            self.X_train, self.y_train, 10)[partition_id]
+        self.X_train, self.y_train = partition(self.X_train, self.y_train, 10)[
+            partition_id
+        ]
 
     def get_parameters(self, config) -> NDArrays:
         """Returns the paramters of a sklearn LinearRegression model."""
@@ -79,8 +83,8 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
 
     def fit(self, parameters, config) -> tuple[NDArrays, int, dict]:
         """Refit the model locally with the central parameters and return them"""
-        #1. Set model params from global model
-        #2. Refit model on local data 
+        # 1. Set model params from global model
+        # 2. Refit model on local data
 
         updated_parameters = parameters
         num_examples = 0
@@ -88,10 +92,12 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
 
         return updated_parameters, num_examples, metrics
 
-    def evaluate(self, parameters: NDArrays, config: Dict[str, Scalar]) -> Tuple[float, int, Dict[str, Scalar]]:
-        '''
-        You can leave this method as is for now.
-        '''
+    def evaluate(
+        self, parameters: NDArrays, config: Dict[str, Scalar]
+    ) -> Tuple[float, int, Dict[str, Scalar]]:
+        """
+        You can leave this method untouched for now.
+        """
         mse = 20
         num_examples = 100
         metrics = {"dummy": 0}
@@ -108,9 +114,9 @@ if __name__ == "__main__":
 
             client = CaliforniaHousingClient()
             fl.client.start_numpy_client(
-                server_address=server_address + ":" + server_port, client=client)
+                server_address=server_address + ":" + server_port, client=client
+            )
             break
         except Exception as e:
-            logging.warning(
-                "Could not connect to server: sleeping for 5 seconds...")
+            logging.warning("Could not connect to server: sleeping for 5 seconds...")
             time.sleep(5)

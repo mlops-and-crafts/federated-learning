@@ -29,6 +29,7 @@ Returns these outputs:
 
 class CaliforniaHousingClient(fl.client.NumPyClient):
     def __init__(self):
+        # Initilialise the model
         self.model = LinearRegression()
 
         # At the beginning of the run the server requests the parameters of the model.
@@ -36,6 +37,8 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
         set_initial_params(self.model)
 
         X, y = fetch_california_housing(return_X_y=True)
+
+        # Define the data and partition it randomly across "devices"
 
         partition_id = np.random.choice(10)
 
@@ -46,24 +49,22 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
             self.X_train, self.y_train, 10)[partition_id]
 
     def get_parameters(self, config) -> NDArrays:
-        """Returns the paramters of a sklearn LinearRegression model."""
+        """Reuse the previous exercise or feel free to copy from the answers."""
 
         parameters = []
 
         return parameters
 
     def fit(self, parameters, config) -> tuple[NDArrays, int, dict]:
-        """Refit the model locally with the central parameters and return them"""
+        """Reuse the previous exercise or feel free to copy from the answers."""
         updated_parameters = parameters
         num_examples = 0
         metrics = {}  # Won't be used in this example, we can return it empty
 
         return updated_parameters, num_examples, metrics
 
-    def evaluate(self, parameters: NDArrays, config: Dict[str, Scalar]) -> Tuple[float, int, Dict[str, Scalar]]:
-        '''
-        You can leave this method as is for now.
-        '''
+    def evaluate(self, parameters: NDArrays, config: Dict[str, Scalar]) -> Tuple[float, int, Dict[str, Scalar]]
+        """This method defines how server-side evaluation is run."""
         mse = 20
         num_examples = 100
         metrics = {"dummy": 0}
