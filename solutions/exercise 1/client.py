@@ -57,7 +57,7 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
 
         self.model = self.model.fit(self.X_train, self.y_train)
 
-        return self.get_parameters(config), len(self.X_train), {}
+        return self.get_parameters(config), len(self.X_train), {"client_name": "Pietje"}
 
     def evaluate(self, parameters, config):
         mse = 0.0
@@ -79,8 +79,8 @@ if __name__ == "__main__":
             fl.client.start_numpy_client(
                 server_address=server_address + ":" + server_port, client=client
             )
-            break
         except Exception as e:
             logging.exception(e)
             logging.warning("Could not connect to server: sleeping for 5 seconds...")
-            time.sleep(5)
+        
+        time.sleep(10)
