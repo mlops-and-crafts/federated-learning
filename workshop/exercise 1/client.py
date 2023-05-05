@@ -67,12 +67,12 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
 
         # Define the data and partition it randomly across "devices"
 
-        partition_id = np.random.choice(10)
+        partition_id = np.random.choice(50)
 
         self.X_train, self.y_train = X[:15000], y[:15000]
         self.X_test, self.y_test = X[15000:], y[15000:]
 
-        self.X_train, self.y_train = partition(self.X_train, self.y_train, 10)[
+        self.X_train, self.y_train = partition(self.X_train, self.y_train, 50)[
             partition_id
         ]
 
