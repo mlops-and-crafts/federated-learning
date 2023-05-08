@@ -80,7 +80,7 @@ if __name__ == "__main__":
             fl.client.start_numpy_client(
                 server_address=server_address + ":" + server_port,
                 client=client,
-                root_certificates="", # pass the certificate here as a byte string
+                root_certificates="",  # pass the certificate here as a byte string
             )
             break
         except Exception as e:
