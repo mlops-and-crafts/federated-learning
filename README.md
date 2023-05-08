@@ -21,4 +21,4 @@ Python 3.9, docker
 Re-watch [this video](link)
 
 ## Credits
-This workshop was set up by @mlops-and-crafts and @atroyanovsky @saraperric85
+This workshop was set up by @mlops-and-crafts, [@atroyanovsky](https://github.com/atroyanovsky) and [@saraperric85](https://github.com/saraperric85)
