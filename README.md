@@ -1,18 +1,21 @@
 
-# Workshop Name 
-### Presentation: [Presentation_name](workshop/presentation_template.pptx)
+# Federated Machine Learning with Flower: Packaging, Monitoring, Securing
+### Presentation: [Presentation_name](workshop/presentation,pptx)
 
 ## Workshop description
-Describe why your topic is important and what you want to share with your audience
+This repository contains all the code, documentation, and resources you will need to participate in our workshop on Federated Learning using the [Flower package](https://flower.dev/). Flower is a powerful and easy-to-use open-source framework for Federated Learning, allowing developers to easily create and manage distributed machine learning models.
+
+Federated Learning is a development in machine learning that allows models to be trained on decentralized data without the need for centralization. It preserves data privacy, reduces transfer costs, and enables faster model training. This approach has applications in various industries, including healthcare, finance, and transportation, where data privacy and security are critical. 
+
+The decentralized nature of federated learning brings new challanges with regards to deploying, packaging, monitoring and training these models. In this workshop we will be discussing these challenges, and we will show you how you could tackle them.
 
 ## Requirements
-Indicate Python version and any other required tools
-
-Add requirements.txt, conda.yml, pyproject.toml, Docker image or Binder/Google Collab link
+Python 3.9, docker
 
 ## Usage
 * Clone the repository
-* do stuff
+* Set up a venv for the project with your preferred package manager
+* Install the dependencies dev-requirements.txt
 
 ## Video recording
 Re-watch [this video](link)
