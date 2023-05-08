@@ -21,4 +21,6 @@ Python 3.9, docker
 Re-watch [this video](link)
 
 ## Credits
-This workshop was set up by @mlops-and-crafts, [@atroyanovsky](https://github.com/atroyanovsky) and [@saraperric85](https://github.com/saraperric85)
+This workshop was set up by @mlops-and-crafts, [@atroyanovsky](https://github.com/atroyanovsky) and [@saraperric85](https://github.com/saraperric85).
+
+The workshop code is based on the [flwr sklearn example](https://flower.dev/docs/quickstart-scikitlearn.html) and the certificate generation is based on [this example](https://flower.dev/docs/ssl-enabled-connections.html). 
