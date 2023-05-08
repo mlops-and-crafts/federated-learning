@@ -59,7 +59,7 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
         """Reuse the previous exercise or feel free to copy from the answers."""
         updated_parameters = parameters
         num_examples = 0
-        metrics = {}  # Won't be used in this example, we can return it empty
+        metrics = {"client_name": "client"}  # Won't be used in this example, we can return it empty
 
         return updated_parameters, num_examples, metrics
 

@@ -90,7 +90,7 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
 
         updated_parameters = parameters
         num_examples = 0
-        metrics = {"name": "test"} 
+        metrics = {"client_name": "client"}
 
         return updated_parameters, num_examples, metrics
 

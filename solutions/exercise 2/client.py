@@ -61,7 +61,7 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
             warnings.simplefilter("ignore")
             self.model = self.model.fit(self.X_train, self.y_train)
 
-        return self.get_parameters(config), len(self.X_train), {}
+        return self.get_parameters(config), len(self.X_train), {"client_name": "client"}
 
     def evaluate(self, parameters, config):
         set_model_params(self.model, parameters)
