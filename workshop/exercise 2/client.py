@@ -69,10 +69,11 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
     def evaluate(
         self, parameters: NDArrays, config: Dict[str, Scalar]
     ) -> Tuple[float, int, Dict[str, Scalar]]:
-        """This method defines how server-side evaluation is run."""
+        """This method defines how client-side evaluation is run."""
         mse = 20
         num_examples = 100
-        metrics = {"dummy": 0}
+        # populate here the r_squared metrics
+        metrics = {"r_squared": 0}
 
         return mse, num_examples, metrics
 
@@ -80,9 +81,9 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
 if __name__ == "__main__":
     while True:
         try:
-            # pick up IP and port from the os environment or pass them as sys args
-            server_address = ""
-            server_port = ""
+
+            server_address = os.environ["SERVER_ADDRESS"]
+            server_port = os.environ["SERVER_PORT"]
 
             client = CaliforniaHousingClient()
             fl.client.start_numpy_client(
@@ -90,5 +91,6 @@ if __name__ == "__main__":
             )
             break
         except Exception as e:
+            logging.exception(e)
             logging.warning("Could not connect to server: sleeping for 5 seconds...")
             time.sleep(5)

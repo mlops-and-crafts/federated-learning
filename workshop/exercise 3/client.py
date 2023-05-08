@@ -8,6 +8,7 @@ from typing import Dict, Tuple
 import logging
 import time
 import urllib
+import os
 
 """
 Flower has a built-in functionality to secure communcation with the server through SSL encryption.
@@ -68,9 +69,8 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
 if __name__ == "__main__":
     while True:
         try:
-            # pick up IP and port from the os environment or pass them as sys args
-            server_address = ""
-            server_port = ""
+            server_address = os.environ["SERVER_ADDRESS"]
+            server_port = os.environ["SERVER_PORT"]
 
             # Download the root certificate from here "http://{server_address}:8000/ca.crt" and store it safely
             # treat it like a secret! You can use urllib to directly read and pass it, or you can download it,
@@ -80,7 +80,7 @@ if __name__ == "__main__":
             fl.client.start_numpy_client(
                 server_address=server_address + ":" + server_port,
                 client=client,
-                root_certificates="",
+                root_certificates="", # pass the certificate here as a byte string
             )
             break
         except Exception as e:

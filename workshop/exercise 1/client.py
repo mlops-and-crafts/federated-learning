@@ -31,9 +31,8 @@ def get_parameters(self, config) -> NDArrays (list of mutable iterables): define
 edge model and how they are sent back to the server.
 Our server already exists, and expects parameters in a two-dimensional list format,
 with the format being [coefficients (NDArrays), intercept (NDArrays)].
-The config parameter is mandatory in this method, but we will not use it in our implementation.
-Configuration parameters requested by the server.
-This can be used to tell the client which parameters are needed along with some scalar attributes.
+The config parameter is mandatory in this method, but we will not use it in our implementation, therefore it is empty.
+
 
 def fit(self, parameters, config): -> List, Integer, Dict defines how the model will be refit, using the parameters passed by the server.
 The parameters argument is passed by the global (server) model. Configuration parameters allow the server to influence training on the client.
@@ -46,11 +45,13 @@ It returns the following three outputs:
     float, int, or str. It can be used to communicate arbitrary values back to the server.
 
 We have already written a client class with the skeleton methods below. Your task is to populate these methods.
-When you're finished, pick up the server ip address in the file entrypoint (if __name__ = "__main__"). We will be 
-passing these as ENV variables in docker. Also have a look at the dockerfile to make sure you pass the correct IP address and 
-port.
+When you're finished, populate the dockerfile with the IP address and port that will be provided to you and pass them to the file entrypoint (if __name__ = "__main__"). 
 
 When you're done, feel free to launch your client to check whether it connects to the server!
+You can do that by building the docker image and drunning it.
+
+docker build -t client PATH_TO_CLIENT
+docker run client
 """
 
 
@@ -66,7 +67,7 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
         X, y = fetch_california_housing(return_X_y=True)
 
         # Define the data and partition it randomly across "devices"
-
+        # Select a sample of the original dataset in order to mimic a real life situation in which every edge device has a different dataset
         partition_id = np.random.choice(50)
 
         self.X_train, self.y_train = X[:15000], y[:15000]
@@ -90,6 +91,7 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
 
         updated_parameters = parameters
         num_examples = 0
+        # change the value to your name to see whether your client is connecting to the server correctly
         metrics = {"client_name": "client"}
 
         return updated_parameters, num_examples, metrics
@@ -110,7 +112,7 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
 if __name__ == "__main__":
     while True:
         try:
-            # pick up IP and port from the os environment or pass them as sys args
+            # pass IP and port from the os environment or pass them as sys args
             server_address = ""
             server_port = ""
 
