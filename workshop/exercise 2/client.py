@@ -9,7 +9,7 @@ import logging
 import time
 import os
 
-'''
+"""
 There are two categories of evaluation and monitoring in federated learning: server-side and client-side.
 In general monitoring in different types of drift is very difficult for federated learning, because
 the data stays on the device. You can construct metrics that can be sent to the server, but care
@@ -24,7 +24,7 @@ Returns these outputs:
     num_examples (int) - The number of examples used for evaluation.
     metrics (Dict[str, Scalar]) - A dictionary mapping arbitrary string keys to values of type bool, bytes, float, int, or str.
     It can be used to communicate arbitrary values back to the server.
-'''
+"""
 
 
 class CaliforniaHousingClient(fl.client.NumPyClient):
@@ -45,8 +45,9 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
         self.X_train, self.y_train = X[:15000], y[:15000]
         self.X_test, self.y_test = X[15000:], y[15000:]
 
-        self.X_train, self.y_train = partition(
-            self.X_train, self.y_train, 10)[partition_id]
+        self.X_train, self.y_train = partition(self.X_train, self.y_train, 10)[
+            partition_id
+        ]
 
     def get_parameters(self, config) -> NDArrays:
         """Reuse the previous exercise or feel free to copy from the answers."""
@@ -59,11 +60,15 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
         """Reuse the previous exercise or feel free to copy from the answers."""
         updated_parameters = parameters
         num_examples = 0
-        metrics = {"client_name": "client"}  # Won't be used in this example, we can return it empty
+        metrics = {
+            "client_name": "client"
+        }  # Won't be used in this example, we can return it empty
 
         return updated_parameters, num_examples, metrics
 
-    def evaluate(self, parameters: NDArrays, config: Dict[str, Scalar]) -> Tuple[float, int, Dict[str, Scalar]]
+    def evaluate(
+        self, parameters: NDArrays, config: Dict[str, Scalar]
+    ) -> Tuple[float, int, Dict[str, Scalar]]:
         """This method defines how server-side evaluation is run."""
         mse = 20
         num_examples = 100
@@ -81,9 +86,9 @@ if __name__ == "__main__":
 
             client = CaliforniaHousingClient()
             fl.client.start_numpy_client(
-                server_address=server_address + ":" + server_port, client=client)
+                server_address=server_address + ":" + server_port, client=client
+            )
             break
         except Exception as e:
-            logging.warning(
-                "Could not connect to server: sleeping for 5 seconds...")
+            logging.warning("Could not connect to server: sleeping for 5 seconds...")
             time.sleep(5)

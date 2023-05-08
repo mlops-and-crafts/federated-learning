@@ -7,23 +7,23 @@ from sklearn.metrics import mean_squared_error
 
 logger = logging.getLogger("flwr")
 
+
 def fit_metrics_aggregation_fn(metrics):
     clients_string = ""
     for i, client_metrics in enumerate(metrics):
         clients_string += " " + client_metrics[1]["client_name"]
         if i % 5 == 0 and i != 0:
             clients_string += "\n"
-    
+
     logger.info(f"Connected client names:{clients_string}")
+
 
 def get_evaluate_fn(model: LinearRegression):
     """Return an evaluation function for server-side evaluation."""
     X, y = fetch_california_housing(return_X_y=True)
     X_test, y_test = X[15000:], y[15000:]
 
-    def evaluate(
-        server_round, parameters, config
-    ):
+    def evaluate(server_round, parameters, config):
         model.coef_ = parameters[0]
         model.intercept_ = parameters[1]
 
@@ -40,9 +40,10 @@ if __name__ == "__main__":
     while True:
         try:
             strategy = fl.server.strategy.FedAvg(
-                min_available_clients=2, 
+                min_available_clients=2,
                 fit_metrics_aggregation_fn=fit_metrics_aggregation_fn,
-                evaluate_fn=get_evaluate_fn(model))
+                evaluate_fn=get_evaluate_fn(model),
+            )
             fl.server.start_server(
                 server_address="0.0.0.0:8080",
                 strategy=strategy,
@@ -50,8 +51,7 @@ if __name__ == "__main__":
             )
         except Exception as e:
             logging.exception(e)
-        
+
         logger.info("Sleeping for 10 seconds before next round.")
 
         time.sleep(10)
-

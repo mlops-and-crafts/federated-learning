@@ -9,16 +9,15 @@ import logging
 import time
 import urllib
 
-'''
+"""
 Flower has a built-in functionality to secure communcation with the server through SSL encryption.
 
 The exercise here is to pass the root certificate to the client.
-'''
+"""
 
 
 class CaliforniaHousingClient(fl.client.NumPyClient):
     def __init__(self):
-
         # Initilialise the model
         self.model = LinearRegression()
 
@@ -34,8 +33,9 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
         self.X_train, self.y_train = X[:15000], y[:15000]
         self.X_test, self.y_test = X[15000:], y[15000:]
 
-        self.X_train, self.y_train = partition(
-            self.X_train, self.y_train, 10)[partition_id]
+        self.X_train, self.y_train = partition(self.X_train, self.y_train, 10)[
+            partition_id
+        ]
 
     def get_parameters(self, config) -> NDArrays:
         """Reuse the previous exercise or feel free to copy from the answers."""
@@ -48,11 +48,15 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
         """Reuse the previous exercise or feel free to copy from the answers."""
         updated_parameters = parameters
         num_examples = 0
-        metrics = {"client_name": "client"}  # Won't be used in this example, we can return it empty
+        metrics = {
+            "client_name": "client"
+        }  # Won't be used in this example, we can return it empty
 
         return updated_parameters, num_examples, metrics
 
-    def evaluate(self, parameters: NDArrays, config: Dict[str, Scalar]) -> Tuple[float, int, Dict[str, Scalar]]:
+    def evaluate(
+        self, parameters: NDArrays, config: Dict[str, Scalar]
+    ) -> Tuple[float, int, Dict[str, Scalar]]:
         """Reuse the previous exercise or feel free to copy from the answers."""
         mse = 20
         num_examples = 100
@@ -74,9 +78,11 @@ if __name__ == "__main__":
 
             client = CaliforniaHousingClient()
             fl.client.start_numpy_client(
-                server_address=server_address + ":" + server_port, client=client, root_certificates="")
+                server_address=server_address + ":" + server_port,
+                client=client,
+                root_certificates="",
+            )
             break
         except Exception as e:
-            logging.warning(
-                "Could not connect to server: sleeping for 5 seconds...")
+            logging.warning("Could not connect to server: sleeping for 5 seconds...")
             time.sleep(5)
