@@ -81,7 +81,6 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
 if __name__ == "__main__":
     while True:
         try:
-
             server_address = os.environ["SERVER_ADDRESS"]
             server_port = os.environ["SERVER_PORT"]
 
