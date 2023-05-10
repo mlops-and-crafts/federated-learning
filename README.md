@@ -1,6 +1,6 @@
 
 # Federated Machine Learning with Flower: Packaging, Monitoring, Securing
-### Presentation: [Federated Learning with Flower](/Federated learning.pptx)
+### Presentation: [Federated Learning with Flower](/Federated%20learning.pptx)
 
 ## Workshop description
 This repository contains all the code, documentation, and resources you will need to participate in our workshop on Federated Learning using the [Flower package](https://flower.dev/). Flower is a powerful and easy-to-use open-source framework for Federated Learning, allowing developers to easily create and manage distributed machine learning models.
