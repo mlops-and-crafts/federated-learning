@@ -61,7 +61,7 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
         return self.get_parameters(config), len(self.X_train), {"client_name": "client"}
 
     def evaluate(self, parameters, config):
-        set_model_params(self.model, parameters)
+        self.set_model_params(parameters)
         mse = mean_squared_error(self.y_test, self.model.predict(self.X_test))
         r_squared = self.model.score(self.X_test, self.y_test)
         return mse, len(self.X_test), {"r_squared": r_squared}

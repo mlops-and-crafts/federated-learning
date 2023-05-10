@@ -15,7 +15,10 @@ def fit_metrics_aggregation_fn(metrics):
         if i % 5 == 0 and i != 0:
             clients_string += "\n"
 
-    logger.info(f"Connected client names:{clients_string}")
+    logger.info("Connected client names:" + clients_string)
+    logger.info("Sleeping for 10 seconds between rounds")
+
+    time.sleep(10)
 
 
 def get_evaluate_fn(model: LinearRegression):
@@ -47,11 +50,9 @@ if __name__ == "__main__":
             fl.server.start_server(
                 server_address="0.0.0.0:8080",
                 strategy=strategy,
-                config=fl.server.ServerConfig(num_rounds=1),
+                config=fl.server.ServerConfig(num_rounds=2000000),
             )
         except Exception as e:
             logging.exception(e)
 
         logger.info("Sleeping for 10 seconds before next round.")
-
-        time.sleep(10)
