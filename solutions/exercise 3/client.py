@@ -40,12 +40,6 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
         if self.model.fit_intercept:
             self.model.intercept_ = params[1]
 
-    def set_model_params(self, params):
-        """Sets the parameters of a sklean Regression model."""
-        self.model.coef_ = params[0]
-        if self.model.fit_intercept:
-            self.model.intercept_ = params[1]
-
     def get_parameters(self, config):
         """Returns the paramters of a sklearn LinearRegression model."""
         if self.model.fit_intercept:
