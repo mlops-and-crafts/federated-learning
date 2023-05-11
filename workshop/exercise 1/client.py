@@ -102,7 +102,7 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
         """
         You can leave this method untouched for now.
         """
-        mse = 20
+        mse = 20.
         num_examples = 100
         metrics = {"dummy": 0}
 
@@ -122,5 +122,6 @@ if __name__ == "__main__":
             )
             break
         except Exception as e:
+            logging.exception(e)
             logging.warning("Could not connect to server: sleeping for 5 seconds...")
             time.sleep(5)

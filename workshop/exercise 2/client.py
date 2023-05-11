@@ -70,7 +70,7 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
         self, parameters: NDArrays, config: Dict[str, Scalar]
     ) -> Tuple[float, int, Dict[str, Scalar]]:
         """This method defines how client-side evaluation is run."""
-        mse = 20
+        mse = 20.
         num_examples = 100
         # populate here the r_squared metrics
         metrics = {"r_squared": 0}

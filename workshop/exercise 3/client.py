@@ -59,7 +59,7 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
         self, parameters: NDArrays, config: Dict[str, Scalar]
     ) -> Tuple[float, int, Dict[str, Scalar]]:
         """Reuse the previous exercise or feel free to copy from the answers."""
-        mse = 20
+        mse = 20.
         num_examples = 100
         metrics = {"dummy": 0}
 
@@ -84,5 +84,6 @@ if __name__ == "__main__":
             )
             break
         except Exception as e:
+            logging.exception(e)
             logging.warning("Could not connect to server: sleeping for 5 seconds...")
             time.sleep(5)
