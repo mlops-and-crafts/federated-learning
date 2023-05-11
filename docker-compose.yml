@@ -1,17 +1,11 @@
 services:
   client1:
     image: "client"
-    # ports:
-      # - 8080:8080
   client2:
     image: "client"
-    # ports:
-    #   - 8080:8080
   client3:
     image: "client"
-    # ports:
-    #   - 8080:8080
-  server:
+  server: # You will need to build the server if you have not done so. Run "docker build -t server server_src"
     image: "server"
     ports:
       - 8080:8080
