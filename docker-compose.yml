@@ -3,13 +3,13 @@
 # You will need to build the server if you have not done so. Run "docker build -t server server_src"
 
 services:
-  client:
+  client: # You can use the client from the solutions of exercise 2: "docker build -t client 'solutions/exercise 2/'"
     image: "client"
     environment:
       SERVER_ADDRESS: "server"
     deploy:
       replicas: 80
-  server: 
+  server: # You will need to build the server if you have not done so. Run "docker build -t server server_src"
     image: "server"
     ports:
       - 8080:8080
