@@ -1,11 +1,15 @@
+# Run this docker compose to simulate multiple clients. Add as many as you want by changing the number of replicas below.
+# If you're running the clients and server locally (localhost), make sure you specify the IP adress as 0.0.0.0
+# You will need to build the server if you have not done so. Run "docker build -t server server_src"
+
 services:
-  client1:
+  client:
     image: "client"
-  client2:
-    image: "client"
-  client3:
-    image: "client"
-  server: # You will need to build the server if you have not done so. Run "docker build -t server server_src"
+    environment:
+      SERVER_ADDRESS: "server"
+    deploy:
+      replicas: 80
+  server: 
     image: "server"
     ports:
       - 8080:8080

@@ -20,6 +20,8 @@ def fit_metrics_aggregation_fn(metrics):
 
     time.sleep(10)
 
+    return {"connected_clients": clients_string}
+
 
 def get_evaluate_fn(model: LinearRegression):
     """Return an evaluation function for server-side evaluation."""
@@ -54,5 +56,3 @@ if __name__ == "__main__":
             )
         except Exception as e:
             logging.exception(e)
-
-        logger.info("Sleeping for 10 seconds before next round.")

@@ -73,7 +73,7 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
 if __name__ == "__main__":
     while True:
         try:
-            # pick up Ip from the os environment or pass them as sys args
+            # Pick up Ip from the os environment or pass them as sys args
             server_address = os.environ["SERVER_ADDRESS"]
             server_port = os.environ["SERVER_PORT"]
 
@@ -84,5 +84,6 @@ if __name__ == "__main__":
             break
         except Exception as e:
             logging.exception(e)
-            logging.warning("Could not connect to server: sleeping for 5 seconds...")
+            logging.warning(
+                "Could not connect to server: sleeping for 5 seconds...")
             time.sleep(5)
