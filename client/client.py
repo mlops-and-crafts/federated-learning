@@ -1,86 +1,128 @@
-import flwr as fl
-import numpy as np
-from sklearn.datasets import fetch_california_housing
-from sklearn.linear_model import LinearRegression
+
 import logging
 import time
 import os
-from utils import set_initial_params, partition
-
 import ssl
+from typing import Dict, List, Tuple
+
+import flwr as fl
+import numpy as np
+from sklearn.datasets import fetch_california_housing, make_regression
+from sklearn.linear_model import SGDRegressor
+from sklearn.metrics import mean_squared_error
+
+import client_config
 
 logging.basicConfig(level=logging.DEBUG)
 ssl._create_default_https_context = ssl._create_unverified_context
-np.random.seed(42)
 
 
 class CaliforniaHousingClient(fl.client.NumPyClient):
-    def __init__(self):
-        self.data = None
-        self.target = None
-        self.model = LinearRegression()
-        set_initial_params(self.model)
-
-        X, y = fetch_california_housing(return_X_y=True)
+    def __init__(self, name="client"):
+        self.name  = name
+        self.edge_model = SGDRegressor()
+        self.federated_model = SGDRegressor()
 
         partition_id = np.random.choice(50)
 
+        #X, y = fetch_california_housing(return_X_y=True)
+        X, y, coef = make_regression(n_samples=20_000, n_features=5, bias=-2.0, n_informative=3, noise=1, random_state=42, coef=True)
+
         self.X_train, self.y_train = X[:15000], y[:15000]
         self.X_test, self.y_test = X[15000:], y[15000:]
-
-        self.X_train, self.y_train = partition(self.X_train, self.y_train, 50)[
+        N_PARTITIONS = 50
+        self.X_train, self.y_train = self._partition_dataset(self.X_train, self.y_train, N_PARTITIONS)[
             partition_id
         ]
 
-    def set_model_params(self, params):
-        """Sets the parameters of a sklean Regression model."""
-        self.model.coef_ = params[0]
-        if self.model.fit_intercept:
-            self.model.intercept_ = params[1]
+        self.n_features = len(self.X_train[0])
+        self._set_model_zero_coefs(self.edge_model, self.n_features)
+        self._set_model_zero_coefs(self.federated_model, self.n_features)
 
-    def get_parameters(self, config):
+        logging.debug(
+            f"Initialized {self.name} with partition_id={partition_id} "
+            f"intercept_={self.federated_model.intercept_} coef_={self.federated_model.coef_}, "
+            f"X_train.shape={self.X_train.shape} X_test.shape={self.X_test.shape}..."
+        )
+
+    @staticmethod
+    def _partition_dataset(X: np.ndarray, y: np.ndarray, num_partitions: int):
+        """Split X and y into a number of partitions."""
+        return list(
+            zip(np.array_split(X, num_partitions), np.array_split(y, num_partitions))
+        )
+    
+    def _set_model_zero_coefs(self, model:SGDRegressor, n_features:int)->None:
+        model.intercept_ = np.zeros((1,))
+        model.coef_ = np.zeros((n_features,))
+        
+    def _set_model_coefs(self, model:SGDRegressor, params:List[np.ndarray])->None:
+        """Sets the parameters of a sklean Regression model."""
+        model.intercept_ = params[0]
+        model.coef_ = params[1]
+
+    def _get_model_coefs(self, model:SGDRegressor) -> List[np.ndarray]:
         """Returns the paramters of a sklearn LinearRegression model."""
-        if self.model.fit_intercept:
-            params = [
-                self.model.coef_,
-                self.model.intercept_,
-            ]
-        else:
-            params = [
-                self.model.coef_,
-            ]
+        coefs = [model.intercept_, model.coef_]
+        return coefs
+    
+    def get_parameters(self, config):
+        params = self._get_model_coefs(self.federated_model)
+        logging.debug(f"Client {self.name} sending parameters: {params}")
         return params
+    
+    def set_parameters(self, parameters, config):
+        logging.debug(f"Client {self.name} received parameters {parameters} and {config}")
+        self.federated_model.set_params(**config)
+        self._set_model_coefs(self.federated_model, parameters)
+        
 
     def fit(self, parameters, config):
-        self.set_model_params(parameters)
+        self.edge_model.partial_fit(self.X_train, self.y_train)
+        self.federated_model.set_params(**config)
+        self.federated_model.partial_fit(self.X_train, self.y_train)
 
-        logging.info("fitting model")
-        self.model = self.model.fit(self.X_train, self.y_train)
-        
-        return self.get_parameters(config), len(self.X_train), {"client_name": "client"}
+        edge_model_coefs = self._get_model_coefs(self.edge_model)
+        federated_model_coefs = self._get_model_coefs(self.federated_model)
+
+        n_samples = len(self.X_train)
+        metadata = {"client_name": self.name}
+
+        logging.info(f"Client {self.name} fit model with {n_samples} samples.")
+        # self.evaluate(parameters, config)
+        return federated_model_coefs, n_samples, metadata
+    
+    def _get_rmse(self, model:SGDRegressor) -> float:
+        return mean_squared_error(self.y_test, model.predict(self.X_test), squared=False)
+
 
     def evaluate(self, parameters, config):
-        mse = 0.0
-        num_examples = 100
-        dummy = 0
+        edge_rmse = self._get_rmse(self.edge_model)
+        federated_rmse = self._get_rmse(self.federated_model)
+
+        central_model = SGDRegressor()
+        central_model.set_params(**config)
+        self._set_model_coefs(central_model, parameters)
+        
+        central_rmse = self._get_rmse(central_model)
+        n_samples = len(self.X_test)
         # Make sure to leave the key name as r-squared
-        metrics = {"dummy": dummy}
-        return mse, num_examples, metrics
+        metrics = {"rmse": central_rmse}
+        logging.info(f"Client {self.name} evaluated mse: edge={edge_rmse} federated={federated_rmse} central={central_rmse}...")
+        return central_rmse, n_samples, metrics
 
 
 if __name__ == "__main__":
+    time.sleep(1) # wait for server to start
     while True:
         try:
-            # pick up Ip from the os environment or pass them as sys args
-            server_address = os.environ["SERVER_ADDRESS"]
-            server_port = os.environ["SERVER_PORT"]
-
             client = CaliforniaHousingClient()
+            server_address = f"{client_config.SERVER_ADDRESS}:{client_config.SERVER_PORT}"
             fl.client.start_numpy_client(
-                server_address=server_address + ":" + server_port, client=client
+                server_address=server_address, client=client
             )
         except Exception as e:
             logging.exception(e)
-            logging.warning("Could not connect to server: sleeping for 5 seconds...")
+            logging.warning(f"Could not connect to server: sleeping for {client_config.RETRY_SLEEP_TIME} seconds...")
 
-        time.sleep(10)
+        time.sleep(client_config.RETRY_SLEEP_TIME)

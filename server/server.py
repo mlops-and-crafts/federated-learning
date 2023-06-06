@@ -1,9 +1,11 @@
 import flwr as fl
 import logging
 import time
-from sklearn.datasets import fetch_california_housing
-from sklearn.linear_model import LinearRegression
+from sklearn.datasets import fetch_california_housing, make_regression
+from sklearn.linear_model import SGDRegressor
 from sklearn.metrics import mean_squared_error
+
+import server_config
 
 logger = logging.getLogger("flwr")
 
@@ -16,43 +18,48 @@ def fit_metrics_aggregation_fn(metrics):
             clients_string += "\n"
 
     logger.info("Connected client names:" + clients_string)
-    logger.info("Sleeping for 10 seconds between rounds")
+    logger.info(f"Sleeping for {server_config.SLEEP_TIME_BETWEEN_ROUNDS} seconds between rounds")
 
-    time.sleep(10)
+    time.sleep(server_config.SLEEP_TIME_BETWEEN_ROUNDS)
 
     return {"connected_clients": clients_string}
 
 
-def get_evaluate_fn(model: LinearRegression):
-    """Return an evaluation function for server-side evaluation."""
-    X, y = fetch_california_housing(return_X_y=True)
-    X_test, y_test = X[15000:], y[15000:]
+X, y, true_coef = make_regression(n_samples=20_000, n_features=5, bias=-2.0, n_informative=3, noise=1, random_state=42, coef=True)
+logger.info(f"TRUE COEFFICIENTS: {true_coef}")
+X_test, y_test = X[15_000:], y[15_000:]
+model = SGDRegressor()
 
-    def evaluate(server_round, parameters, config):
-        model.coef_ = parameters[0]
-        model.intercept_ = parameters[1]
 
-        loss = mean_squared_error(y_test, model.predict(X_test))
-        r_squared = model.score(X_test, y_test)
-        return loss, {"r_squared": r_squared}
-
-    return evaluate
-
+def evaluate_fn(server_round, parameters, config):
+    model.set_params(**config)
+    model.intercept_ = parameters[0]
+    model.coef_ = parameters[1]
+    
+    rmse = mean_squared_error(y_test, model.predict(X_test), squared=False)
+    r_squared = model.score(X_test, y_test)
+    n_samples = len(X_test)
+    metrics_dict = {"mse": rmse, "r_squared": r_squared}
+    logger.info(f"Round {server_round} RMSE: {rmse} R^2: {r_squared} coefs = {parameters} true coefs = {true_coef}")
+    return rmse, metrics_dict
 
 # Start Flower server for five rounds of federated learning
 if __name__ == "__main__":
-    model = LinearRegression()
     while True:
         try:
             strategy = fl.server.strategy.FedAvg(
-                min_available_clients=2,
+                min_available_clients=server_config.MIN_CLIENTS,
                 fit_metrics_aggregation_fn=fit_metrics_aggregation_fn,
-                evaluate_fn=get_evaluate_fn(model),
+                evaluate_fn=evaluate_fn,
             )
             fl.server.start_server(
-                server_address="0.0.0.0:8080",
+                server_address=f"0.0.0.0:{server_config.PORT}",
                 strategy=strategy,
-                config=fl.server.ServerConfig(num_rounds=2000000),
+                config=fl.server.ServerConfig(
+                    num_rounds=server_config.NUM_ROUNDS,
+                    round_timeout=server_config.ROUND_TIMEOUT,
+                ),
             )
+
         except Exception as e:
             logging.exception(e)
