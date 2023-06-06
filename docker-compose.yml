@@ -5,19 +5,19 @@
 services:
   server: # You will need to build the server if you have not done so. Run "docker build -t server server_src"
     build:
-      context: ./server_src
+      context: ./server
       dockerfile: Dockerfile
     volumes:
-      - ./server_src:/usr/src/app
+      - ./server:/usr/src/app
     ports:
       - 8080:8080
     restart: on-failure
   client: # You can use the client from the solutions of exercise 2: "docker build -t client 'solutions/exercise 2/'"
     build:
-      context: ./solutions/exercise 1
-      dockerfile: dockerfile
+      context: ./client
+      dockerfile: Dockerfile
     volumes:
-      - ./solutions/exercise 1:/usr/src/app
+      - ./client:/usr/src/app
     environment:
       SERVER_ADDRESS: "server"
     deploy:
