@@ -3,13 +3,23 @@
 # You will need to build the server if you have not done so. Run "docker build -t server server_src"
 
 services:
+  server: # You will need to build the server if you have not done so. Run "docker build -t server server_src"
+    build:
+      context: ./server_src
+      dockerfile: Dockerfile
+    volumes:
+      - ./server_src:/usr/src/app
+    ports:
+      - 8080:8080
+    restart: on-failure
   client: # You can use the client from the solutions of exercise 2: "docker build -t client 'solutions/exercise 2/'"
-    image: "client"
+    build:
+      context: ./solutions/exercise 1
+      dockerfile: dockerfile
+    volumes:
+      - ./solutions/exercise 1:/usr/src/app
     environment:
       SERVER_ADDRESS: "server"
     deploy:
-      replicas: 80
-  server: # You will need to build the server if you have not done so. Run "docker build -t server server_src"
-    image: "server"
-    ports:
-      - 8080:8080
+      replicas: 2
+  
