@@ -15,7 +15,7 @@ help:
 
 # Run the entire application
 run:
-	docker-compose up -d
+	docker-compose up -d && docker-compose logs -f -t
 
 # Start only the server container
 server:
@@ -32,7 +32,7 @@ stop:
 # Restart the application
 restart:
 	docker-compose down
-	docker-compose up -d
+	docker-compose up -d && docker-compose logs -f -t
 
 # Show the logs of all containers
 log:
