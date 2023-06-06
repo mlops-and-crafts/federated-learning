@@ -9,9 +9,8 @@ from utils import set_initial_params, partition
 
 import ssl
 
+logging.basicConfig(level=logging.DEBUG)
 ssl._create_default_https_context = ssl._create_unverified_context
-
-
 np.random.seed(42)
 
 
