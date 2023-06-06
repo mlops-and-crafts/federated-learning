@@ -54,8 +54,9 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
     def fit(self, parameters, config):
         self.set_model_params(parameters)
 
+        logging.info("fitting model")
         self.model = self.model.fit(self.X_train, self.y_train)
-
+        
         return self.get_parameters(config), len(self.X_train), {"client_name": "client"}
 
     def evaluate(self, parameters, config):
