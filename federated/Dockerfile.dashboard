@@ -5,9 +5,11 @@ WORKDIR /usr/src/app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY clustered_data.py .
+ENV DASHBOARD_PORT=8050
+
+COPY dashboard_config.py .
 COPY dashboard.py .
 
-EXPOSE 8080
+EXPOSE 8050
 
-CMD ["python3", "server.py"] 
+CMD ["python3", "dashboard.py"] 

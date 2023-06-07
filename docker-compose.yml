@@ -24,4 +24,17 @@ services:
       SERVER_ADDRESS: "server"
     deploy:
       replicas: 2
+  dashboard:
+    image: federated-dashboard
+    build:
+      context: ./federated
+      dockerfile: Dockerfile.dashboard
+    volumes:
+      - ./federated:/usr/src/app
+    ports:
+      - 8050:8050
+    environment:
+      DASHBOARD_PORT: 8050
+    restart: on-failure
+
   
