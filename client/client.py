@@ -10,6 +10,7 @@ import numpy as np
 from sklearn.datasets import fetch_california_housing, make_regression
 from sklearn.linear_model import SGDRegressor
 from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import train_test_split
 
 import client_config
 
@@ -17,39 +18,62 @@ logging.basicConfig(level=logging.DEBUG)
 ssl._create_default_https_context = ssl._create_unverified_context
 
 
-class CaliforniaHousingClient(fl.client.NumPyClient):
-    def __init__(self, name="client"):
+class ClusteredDataGenerator:
+    def __init__(self, X: np.ndarray, y: np.ndarray, n_clusters: int = 50, seed: int = 42, test_size: float = 0.2):
+        self.n_clusters = n_clusters
+        self.seed = seed
+        self.test_size = test_size
+        self.X_train, self.X_test, self.y_train, self.y_test =  train_test_split(
+            X, y, test_size=test_size, random_state=seed)
+        self.cluster_ids = self._random_cluster_ids()
+        
+    def _random_cluster_ids(self) -> np.ndarray:
+        """assign each data point in X_train a random cluster id between 0 and self.n_clusters"""
+        return np.random.choice(self.n_clusters, size=len(self.X_train))
+
+    def _kmeans_cluster_ids(self) -> np.ndarray:
+        raise NotImplementedError
+
+    def get_random_cluster_train_test_data(self) -> Tuple[np.ndarray, np.ndarray]:
+        """Return X, y with where self.cluster_ids equals a random cluster_id"""
+        cluster_id = np.random.choice(self.n_clusters)
+        X = self.X_train[self.cluster_ids == cluster_id]
+        y = self.y_train[self.cluster_ids == cluster_id]
+        X_train, X_test, y_train, y_test =  train_test_split(
+            X, y, test_size=self.test_size, random_state=self.seed)
+        return X_train, X_test, y_train, y_test
+
+
+class SGDRegressorClient(fl.client.NumPyClient):
+    def __init__(self, X_train, X_test, y_train, y_test, name="client"):
         self.name  = name
         self.edge_model = SGDRegressor()
         self.federated_model = SGDRegressor()
 
-        partition_id = np.random.choice(50)
+        self.X_train = X_train
+        self.X_test = X_test
+        self.y_train = y_train
+        self.y_test = y_test
 
-        #X, y = fetch_california_housing(return_X_y=True)
-        X, y, coef = make_regression(n_samples=20_000, n_features=5, bias=-2.0, n_informative=3, noise=1, random_state=42, coef=True)
+        # partition_id = np.random.choice(50)
 
-        self.X_train, self.y_train = X[:15000], y[:15000]
-        self.X_test, self.y_test = X[15000:], y[15000:]
-        N_PARTITIONS = 50
-        self.X_train, self.y_train = self._partition_dataset(self.X_train, self.y_train, N_PARTITIONS)[
-            partition_id
-        ]
+        # #X, y = fetch_california_housing(return_X_y=True)
+        # X, y, coef = make_regression(n_samples=20_000, n_features=5, bias=-2.0, n_informative=3, noise=1, random_state=42, coef=True)
+
+        # self.X_train, self.y_train = X[:15000], y[:15000]
+        # self.X_test, self.y_test = X[15000:], y[15000:]
+        # N_PARTITIONS = 50
+        # self.X_train, self.y_train = self._partition_dataset(self.X_train, self.y_train, N_PARTITIONS)[
+        #     partition_id
+        # ]
 
         self.n_features = len(self.X_train[0])
         self._set_model_zero_coefs(self.edge_model, self.n_features)
         self._set_model_zero_coefs(self.federated_model, self.n_features)
 
         logging.debug(
-            f"Initialized {self.name} with partition_id={partition_id} "
-            f"intercept_={self.federated_model.intercept_} coef_={self.federated_model.coef_}, "
+            f"Initialized {self.name} with "
             f"X_train.shape={self.X_train.shape} X_test.shape={self.X_test.shape}..."
-        )
-
-    @staticmethod
-    def _partition_dataset(X: np.ndarray, y: np.ndarray, num_partitions: int):
-        """Split X and y into a number of partitions."""
-        return list(
-            zip(np.array_split(X, num_partitions), np.array_split(y, num_partitions))
         )
     
     def _set_model_zero_coefs(self, model:SGDRegressor, n_features:int)->None:
@@ -114,13 +138,17 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
 
 if __name__ == "__main__":
     time.sleep(1) # wait for server to start
+    
+    X, y = fetch_california_housing(return_X_y=True)
+    ClusteredDataset = ClusteredDataGenerator(X, y, n_clusters=50, test_size=0.2, seed=42)
+    X_train, X_test, y_train, y_test = ClusteredDataset.get_random_cluster_train_test_data()
+    
+    client = SGDRegressorClient(X_train, X_test, y_train, y_test)
+    server_address = f"{client_config.SERVER_ADDRESS}:{client_config.SERVER_PORT}"
+    
     while True:
         try:
-            client = CaliforniaHousingClient()
-            server_address = f"{client_config.SERVER_ADDRESS}:{client_config.SERVER_PORT}"
-            fl.client.start_numpy_client(
-                server_address=server_address, client=client
-            )
+            fl.client.start_numpy_client(server_address=server_address, client=client)
         except Exception as e:
             logging.exception(e)
             logging.warning(f"Could not connect to server: sleeping for {client_config.RETRY_SLEEP_TIME} seconds...")
