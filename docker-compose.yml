@@ -6,20 +6,20 @@ services:
   server: # You will need to build the server if you have not done so. Run "docker build -t server server_src"
     image: federated-server
     build:
-      context: ./server
-      dockerfile: Dockerfile
+      context: ./federated
+      dockerfile: Dockerfile.server
     volumes:
-      - ./server:/usr/src/app
+      - ./federated:/usr/src/app
     ports:
       - 8080:8080
     restart: on-failure
   client: # You can use the client from the solutions of exercise 2: "docker build -t client 'solutions/exercise 2/'"
     image: federated-client
     build:
-      context: ./client
-      dockerfile: Dockerfile
+      context: ./federated
+      dockerfile: Dockerfile.client
     volumes:
-      - ./client:/usr/src/app
+      - ./federated:/usr/src/app
     environment:
       SERVER_ADDRESS: "server"
     deploy:
