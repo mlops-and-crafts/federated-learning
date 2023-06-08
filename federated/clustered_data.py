@@ -1,6 +1,8 @@
-from typing import Tuple
+from typing import Tuple, Union, List
 
 import numpy as np
+import pandas as pd
+
 from sklearn.model_selection import train_test_split
 from sklearn.cluster import KMeans
 
@@ -8,28 +10,39 @@ from sklearn.cluster import KMeans
 class ClusteredDataGenerator:
     def __init__(
         self,
-        X: np.ndarray,
+        X: Union[np.ndarray, pd.DataFrame],
         y: np.ndarray,
-        n_clusters: int = 50,
+        n_clusters: int = 10,
+        cluster_cols: List[str]=None,
         seed: int = 42,
         test_size: float = 0.2,
+        strategy: str="kmeans",
+        
     ):
         self.n_clusters = n_clusters
+        self.cluster_cols = cluster_cols
         self.seed = seed
         self.test_size = test_size
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
             X, y, test_size=test_size, random_state=seed
         )
-        self.cluster_ids = self._random_cluster_ids()
+        if strategy == "kmeans":
+            self.cluster_ids = self._kmeans_cluster_ids()
+        elif strategy == "random":
+            self.cluster_ids = self._random_cluster_ids()
+        else:
+            raise ValueError(f"strategy {strategy} not supported. Use either 'kmeans' or 'random'")
 
     def _random_cluster_ids(self) -> np.ndarray:
         """assign each data point in X_train a random cluster id between 0 and self.n_clusters"""
         return np.random.choice(self.n_clusters, size=len(self.X_train))
 
     def _kmeans_cluster_ids(self) -> np.ndarray:
-        return KMeans(n_clusters=self.n_clusters, random_state=self.seed).fit_predict(
-            self.X_train
-        )
+        if self.cluster_cols is not None and isinstance(self.X_train, pd.DataFrame):
+            X = self.X_train[self.cluster_cols]
+        else:
+            X  = self.X_train
+        return KMeans(n_clusters=self.n_clusters, random_state=self.seed).fit_predict(X)
 
     def get_train_test_data(
         self,
