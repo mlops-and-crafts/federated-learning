@@ -102,7 +102,7 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
         """
         You can leave this method untouched for now.
         """
-        mse = 20.
+        mse = 20.0
         num_examples = 100
         metrics = {"dummy": 0}
 

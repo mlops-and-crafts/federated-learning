@@ -83,6 +83,5 @@ if __name__ == "__main__":
             break
         except Exception as e:
             logging.exception(e)
-            logging.warning(
-                "Could not connect to server: sleeping for 5 seconds...")
+            logging.warning("Could not connect to server: sleeping for 5 seconds...")
             time.sleep(5)

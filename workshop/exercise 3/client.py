@@ -59,7 +59,7 @@ class CaliforniaHousingClient(fl.client.NumPyClient):
         self, parameters: NDArrays, config: Dict[str, Scalar]
     ) -> Tuple[float, int, Dict[str, Scalar]]:
         """Reuse the previous exercise or feel free to copy from the answers."""
-        mse = 20.
+        mse = 20.0
         num_examples = 100
         metrics = {"dummy": 0}
 

@@ -18,14 +18,24 @@ def fit_metrics_aggregation_fn(metrics):
             clients_string += "\n"
 
     logger.info("Connected client names:" + clients_string)
-    logger.info(f"Sleeping for {server_config.SLEEP_TIME_BETWEEN_ROUNDS} seconds between rounds")
+    logger.info(
+        f"Sleeping for {server_config.SLEEP_TIME_BETWEEN_ROUNDS} seconds between rounds"
+    )
 
     time.sleep(server_config.SLEEP_TIME_BETWEEN_ROUNDS)
 
     return {"connected_clients": clients_string}
 
 
-X, y, true_coef = make_regression(n_samples=20_000, n_features=5, bias=-2.0, n_informative=3, noise=1, random_state=42, coef=True)
+X, y, true_coef = make_regression(
+    n_samples=20_000,
+    n_features=5,
+    bias=-2.0,
+    n_informative=3,
+    noise=1,
+    random_state=42,
+    coef=True,
+)
 logger.info(f"TRUE COEFFICIENTS: {true_coef}")
 X_test, y_test = X[15_000:], y[15_000:]
 model = SGDRegressor()
@@ -35,13 +45,16 @@ def evaluate_fn(server_round, parameters, config):
     model.set_params(**config)
     model.intercept_ = parameters[0]
     model.coef_ = parameters[1]
-    
+
     rmse = mean_squared_error(y_test, model.predict(X_test), squared=False)
     r_squared = model.score(X_test, y_test)
     n_samples = len(X_test)
     metrics_dict = {"mse": rmse, "r_squared": r_squared}
-    logger.info(f"Round {server_round} RMSE: {rmse} R^2: {r_squared} coefs = {parameters} true coefs = {true_coef}")
+    logger.info(
+        f"Round {server_round} RMSE: {rmse} R^2: {r_squared} coefs = {parameters} true coefs = {true_coef}"
+    )
     return rmse, metrics_dict
+
 
 # Start Flower server for five rounds of federated learning
 if __name__ == "__main__":

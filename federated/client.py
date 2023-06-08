@@ -1,4 +1,3 @@
-
 import logging
 import time
 import os
@@ -21,7 +20,7 @@ ssl._create_default_https_context = ssl._create_unverified_context
 
 class SGDRegressorClient(fl.client.NumPyClient):
     def __init__(self, X_train, X_test, y_train, y_test, name="client"):
-        self.name  = name
+        self.name = name
         self.edge_model = SGDRegressor()
         self.federated_model = SGDRegressor()
 
@@ -50,31 +49,32 @@ class SGDRegressorClient(fl.client.NumPyClient):
             f"Initialized {self.name} with "
             f"X_train.shape={self.X_train.shape} X_test.shape={self.X_test.shape}..."
         )
-    
-    def _set_model_zero_coefs(self, model:SGDRegressor, n_features:int)->None:
+
+    def _set_model_zero_coefs(self, model: SGDRegressor, n_features: int) -> None:
         model.intercept_ = np.zeros((1,))
         model.coef_ = np.zeros((n_features,))
-        
-    def _set_model_coefs(self, model:SGDRegressor, params:List[np.ndarray])->None:
+
+    def _set_model_coefs(self, model: SGDRegressor, params: List[np.ndarray]) -> None:
         """Sets the parameters of a sklean Regression model."""
         model.intercept_ = params[0]
         model.coef_ = params[1]
 
-    def _get_model_coefs(self, model:SGDRegressor) -> List[np.ndarray]:
+    def _get_model_coefs(self, model: SGDRegressor) -> List[np.ndarray]:
         """Returns the paramters of a sklearn LinearRegression model."""
         coefs = [model.intercept_, model.coef_]
         return coefs
-    
+
     def get_parameters(self, config):
         params = self._get_model_coefs(self.federated_model)
         logging.debug(f"Client {self.name} sending parameters: {params}")
         return params
-    
+
     def set_parameters(self, parameters, config):
-        logging.debug(f"Client {self.name} received parameters {parameters} and {config}")
+        logging.debug(
+            f"Client {self.name} received parameters {parameters} and {config}"
+        )
         self.federated_model.set_params(**config)
         self._set_model_coefs(self.federated_model, parameters)
-        
 
     def fit(self, parameters, config):
         self.edge_model.partial_fit(self.X_train, self.y_train)
@@ -87,9 +87,11 @@ class SGDRegressorClient(fl.client.NumPyClient):
 
         logging.info(f"Client {self.name} fit model with {n_samples} samples.")
         return federated_model_coefs, n_samples, metadata
-    
-    def _get_rmse(self, model:SGDRegressor) -> float:
-        return mean_squared_error(self.y_test, model.predict(self.X_test), squared=False)
+
+    def _get_rmse(self, model: SGDRegressor) -> float:
+        return mean_squared_error(
+            self.y_test, model.predict(self.X_test), squared=False
+        )
 
     def evaluate(self, parameters, config):
         edge_rmse = self._get_rmse(self.edge_model)
@@ -98,31 +100,50 @@ class SGDRegressorClient(fl.client.NumPyClient):
         central_model = SGDRegressor()
         central_model.set_params(**config)
         self._set_model_coefs(central_model, parameters)
-        
+
         central_rmse = self._get_rmse(central_model)
         n_samples = len(self.X_test)
         # Make sure to leave the key name as r-squared
         metrics = {"rmse": central_rmse}
-        logging.info(f"Client {self.name} evaluated rmse: edge={edge_rmse} federated={federated_rmse} central={central_rmse}...")
+        logging.info(
+            f"Client {self.name} evaluated rmse: edge={edge_rmse} federated={federated_rmse} central={central_rmse}..."
+        )
         return central_rmse, n_samples, metrics
 
 
 if __name__ == "__main__":
-    time.sleep(1) # wait for server to start
-    
-    #X, y = fetch_california_housing(return_X_y=True)
-    X, y, coef = make_regression(n_samples=20_000, n_features=5, bias=-2.0, n_informative=3, noise=1, random_state=42, coef=True)
-    ClusteredDataset = ClusteredDataGenerator(X, y, n_clusters=50, test_size=0.2, seed=42)
-    X_train, X_test, y_train, y_test = ClusteredDataset.get_random_cluster_train_test_data()
-    
+    time.sleep(1)  # wait for server to start
+
+    # X, y = fetch_california_housing(return_X_y=True)
+    X, y, coef = make_regression(
+        n_samples=20_000,
+        n_features=5,
+        bias=-2.0,
+        n_informative=3,
+        noise=1,
+        random_state=42,
+        coef=True,
+    )
+    ClusteredDataset = ClusteredDataGenerator(
+        X, y, n_clusters=50, test_size=0.2, seed=42
+    )
+    (
+        X_train,
+        X_test,
+        y_train,
+        y_test,
+    ) = ClusteredDataset.get_random_cluster_train_test_data()
+
     client = SGDRegressorClient(X_train, X_test, y_train, y_test)
     server_address = f"{client_config.SERVER_ADDRESS}:{client_config.SERVER_PORT}"
-    
+
     while True:
         try:
             fl.client.start_numpy_client(server_address=server_address, client=client)
         except Exception as e:
             logging.exception(e)
-            logging.warning(f"Could not connect to server: sleeping for {client_config.RETRY_SLEEP_TIME} seconds...")
+            logging.warning(
+                f"Could not connect to server: sleeping for {client_config.RETRY_SLEEP_TIME} seconds..."
+            )
 
         time.sleep(client_config.RETRY_SLEEP_TIME)
