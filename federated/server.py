@@ -40,11 +40,19 @@ def evaluate_metrics_aggregation_fn(metrics):
 
     avg_rmse = np.mean(client_rmses)
     std_rmse = np.std(client_rmses)
-    logger.info("Connected client names that finished EVALUATE this round:" + clients_string)
-    logger.info(f"AVG client RMSE: {avg_rmse:.2f} (central={central_rmse}), "
-                f"STD client RMSE: {std_rmse:.2f}")
+    logger.info(
+        "Connected client names that finished EVALUATE this round:" + clients_string
+    )
+    logger.info(
+        f"AVG client RMSE: {avg_rmse:.2f} (central={central_rmse}), "
+        f"STD client RMSE: {std_rmse:.2f}"
+    )
 
-    return {"connected_clients": clients_string, "avg_rmse": avg_rmse, "std_rmse": std_rmse}
+    return {
+        "connected_clients": clients_string,
+        "avg_rmse": avg_rmse,
+        "std_rmse": std_rmse,
+    }
 
 
 def evaluate_fn(server_round, parameters, config):
@@ -52,14 +60,15 @@ def evaluate_fn(server_round, parameters, config):
     federated_model.intercept_ = parameters[0]
     federated_model.coef_ = parameters[1]
 
-    federated_rmse = mean_squared_error(y_test.values, federated_model.predict(X_test), squared=False)
+    federated_rmse = mean_squared_error(
+        y_test.values, federated_model.predict(X_test), squared=False
+    )
     federated_r_squared = federated_model.score(X_test, y_test)
     metrics_dict = {"rmse": federated_rmse, "r_squared": federated_r_squared}
     logger.info(
         f"SERVER Round {server_round} RMSE: {federated_rmse} R^2: {federated_r_squared} coefs = {parameters}"
     )
     return federated_rmse, metrics_dict
-
 
 
 # Start Flower server for five rounds of federated learning
@@ -76,7 +85,7 @@ if __name__ == "__main__":
             random_state=42,
             coef=True,
         )
-        X = pd.DataFrame(X, columns = [f"feature_{i}" for i in range(X.shape[1])])
+        X = pd.DataFrame(X, columns=[f"feature_{i}" for i in range(X.shape[1])])
         logger.info(f"TRUE COEFFICIENTS: {coef}")
 
     X_train, X_test, y_train, y_test = ClusteredDataGenerator(
@@ -86,11 +95,15 @@ if __name__ == "__main__":
         test_size=cfg.TEST_SIZE,
         seed=cfg.SEED,
     ).get_train_test_data()
-    logger.debug(f"SERVER X_train shape: {X_train.shape} y_train shape: {y_train.shape}")
+    logger.debug(
+        f"SERVER X_train shape: {X_train.shape} y_train shape: {y_train.shape}"
+    )
     logger.debug(f"SERVER X_test shape: {X_test.shape} y_est shape: {y_test.shape}")
 
     central_model = LinearRegression().fit(X_train, y_train)
-    central_rmse = mean_squared_error(y_test, central_model.predict(X_test), squared=False)
+    central_rmse = mean_squared_error(
+        y_test, central_model.predict(X_test), squared=False
+    )
     central_r_squared = central_model.score(X_test, y_test)
     logger.info(f"SERVER Central RMSE: {central_rmse} R^2: {central_r_squared}")
 

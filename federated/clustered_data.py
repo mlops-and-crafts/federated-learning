@@ -43,7 +43,9 @@ class ClusteredDataGenerator:
             X = self.X_train[self.cluster_cols]
         else:
             X = self.X_train
-        return KMeans(n_clusters=self.n_clusters, random_state=self.seed, n_init=10).fit_predict(X)
+        return KMeans(
+            n_clusters=self.n_clusters, random_state=self.seed, n_init=10
+        ).fit_predict(X)
 
     def get_train_test_data(
         self,

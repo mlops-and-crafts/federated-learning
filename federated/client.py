@@ -83,7 +83,9 @@ class SGDRegressorClient(fl.client.NumPyClient):
         else:
             sample_idxs = np.arange(len(self.X_train))
 
-        self.edge_model.partial_fit(self.X_train.iloc[sample_idxs], self.y_train.iloc[sample_idxs])
+        self.edge_model.partial_fit(
+            self.X_train.iloc[sample_idxs], self.y_train.iloc[sample_idxs]
+        )
         self.federated_model.set_params(**config)
         self.federated_model.partial_fit(
             self.X_train.iloc[sample_idxs], self.y_train.iloc[sample_idxs]
@@ -93,8 +95,7 @@ class SGDRegressorClient(fl.client.NumPyClient):
         n_samples = len(self.X_train)
         metadata = {
             "client_name": self.name,
-            #"rmse": self._get_rmse(self.federated_model),
-            #"n_samples": len(sample_idxs),
+            "n_samples": len(sample_idxs),
         }
 
         logging.info(f"Client {self.name} fit model with {n_samples} samples.")
@@ -115,7 +116,7 @@ class SGDRegressorClient(fl.client.NumPyClient):
 
         central_rmse = self._get_rmse(central_model)
         n_samples = len(self.X_test)
-        # Make sure to leave the key name as r-squared
+
         metrics = {
             "client_name": self.name,
             "rmse": central_rmse,
@@ -141,8 +142,8 @@ if __name__ == "__main__":
             random_state=42,
             coef=True,
         )
-        X = pd.DataFrame(X, columns = [f"feature_{i}" for i in range(X.shape[1])])
-    
+        X = pd.DataFrame(X, columns=[f"feature_{i}" for i in range(X.shape[1])])
+
     (
         X_train,
         X_test,
@@ -158,7 +159,9 @@ if __name__ == "__main__":
     logging.debug(f"X_train shape: {X_train.shape} y_train shape: {y_train.shape}")
     logging.debug(f"X_test shape: {X_test.shape} y_est shape: {y_test.shape}")
 
-    client = SGDRegressorClient(X_train, X_test, y_train, y_test, train_sample=cfg.TRAIN_SAMPLE)
+    client = SGDRegressorClient(
+        X_train, X_test, y_train, y_test, train_sample=cfg.TRAIN_SAMPLE
+    )
     server_address = f"{cfg.SERVER_ADDRESS}:{cfg.SERVER_PORT}"
 
     while True:
