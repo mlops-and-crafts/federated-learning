@@ -17,8 +17,8 @@ logger = logging.getLogger("flwr")
 
 def fit_metrics_aggregation_fn(metrics):
     clients_string = ""
-    for i, client_metrics in enumerate(metrics):
-        clients_string += " " + client_metrics[1]["client_name"]
+    for i, client_fit_metrics in enumerate(metrics):
+        clients_string += " " + client_fit_metrics[1]["client_name"]
         if i % 5 == 0 and i != 0:
             clients_string += "\n"
 
@@ -47,6 +47,8 @@ def evaluate_metrics_aggregation_fn(metrics):
         f"AVG client RMSE: {avg_rmse:.2f} (central={central_rmse}), "
         f"STD client RMSE: {std_rmse:.2f}"
     )
+
+    # TODO: store metrics to disk for display in dashboard
 
     return {
         "connected_clients": clients_string,

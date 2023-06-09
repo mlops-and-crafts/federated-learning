@@ -37,11 +37,12 @@ class SGDRegressorClient(fl.client.NumPyClient):
 
         self.train_sample = train_sample
         self.name = name
+
         self.edge_model = SGDRegressor()
         self.federated_model = SGDRegressor()
 
         self.n_features = len(self.X_train.columns)
-        logging.debug("client n_features {self.n_features}")
+
         self._set_model_zero_coefs(self.edge_model, self.n_features)
         self._set_model_zero_coefs(self.federated_model, self.n_features)
 
@@ -51,6 +52,7 @@ class SGDRegressorClient(fl.client.NumPyClient):
         )
 
     def _set_model_zero_coefs(self, model: SGDRegressor, n_features: int) -> None:
+        """flwr sever calls a random client for initial params, so we have to set them"""
         model.intercept_ = np.zeros((1,))
         model.coef_ = np.zeros((n_features,))
         model.feature_names_in_ = np.array(self.X_train.columns)
@@ -78,6 +80,8 @@ class SGDRegressorClient(fl.client.NumPyClient):
         self._set_model_coefs(self.federated_model, parameters)
 
     def fit(self, parameters, config):
+        self.set_parameters(parameters, config)
+
         if self.train_sample:
             sample_idxs = np.random.choice(len(self.X_train), self.train_sample)
         else:
@@ -86,27 +90,27 @@ class SGDRegressorClient(fl.client.NumPyClient):
         self.edge_model.partial_fit(
             self.X_train.iloc[sample_idxs], self.y_train.iloc[sample_idxs]
         )
-        self.federated_model.set_params(**config)
+
         self.federated_model.partial_fit(
             self.X_train.iloc[sample_idxs], self.y_train.iloc[sample_idxs]
         )
 
         federated_model_coefs = self._get_model_coefs(self.federated_model)
         n_samples = len(self.X_train)
-        metadata = {
+        fit_metrics = {
             "client_name": self.name,
             "n_samples": len(sample_idxs),
         }
 
         logging.info(f"Client {self.name} fit model with {n_samples} samples.")
-        return federated_model_coefs, n_samples, metadata
+        return federated_model_coefs, n_samples, fit_metrics
 
     def _get_rmse(self, model: SGDRegressor) -> float:
         return mean_squared_error(
             self.y_test.values, model.predict(self.X_test), squared=False
         )
 
-    def evaluate(self, parameters, config):
+    def evaluate(self, parameters, config): # TODO: check where this parameters come from
         edge_rmse = self._get_rmse(self.edge_model)
         federated_rmse = self._get_rmse(self.federated_model)
 
