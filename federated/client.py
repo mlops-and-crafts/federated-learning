@@ -6,12 +6,14 @@ from typing import Dict, List, Tuple
 
 import flwr as fl
 import numpy as np
+import pandas as pd
+
 from sklearn.datasets import fetch_california_housing, make_regression
 from sklearn.linear_model import SGDRegressor
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 
-import client_config
+import cfg
 from clustered_data import ClusteredDataGenerator
 
 logging.basicConfig(level=logging.DEBUG)
@@ -19,29 +21,27 @@ ssl._create_default_https_context = ssl._create_unverified_context
 
 
 class SGDRegressorClient(fl.client.NumPyClient):
-    def __init__(self, X_train, X_test, y_train, y_test, name="client"):
-        self.name = name
-        self.edge_model = SGDRegressor()
-        self.federated_model = SGDRegressor()
-
+    def __init__(
+        self,
+        X_train: pd.DataFrame,
+        X_test: pd.DataFrame,
+        y_train: np.ndarray,
+        y_test: np.ndarray,
+        train_sample: int = None,
+        name="client",
+    ):
         self.X_train = X_train
         self.X_test = X_test
         self.y_train = y_train
         self.y_test = y_test
 
-        # partition_id = np.random.choice(50)
+        self.train_sample = train_sample
+        self.name = name
+        self.edge_model = SGDRegressor()
+        self.federated_model = SGDRegressor()
 
-        # #X, y = fetch_california_housing(return_X_y=True)
-        # X, y, coef = make_regression(n_samples=20_000, n_features=5, bias=-2.0, n_informative=3, noise=1, random_state=42, coef=True)
-
-        # self.X_train, self.y_train = X[:15000], y[:15000]
-        # self.X_test, self.y_test = X[15000:], y[15000:]
-        # N_PARTITIONS = 50
-        # self.X_train, self.y_train = self._partition_dataset(self.X_train, self.y_train, N_PARTITIONS)[
-        #     partition_id
-        # ]
-
-        self.n_features = len(self.X_train[0])
+        self.n_features = len(self.X_train.columns)
+        logging.debug("client n_features {self.n_features}")
         self._set_model_zero_coefs(self.edge_model, self.n_features)
         self._set_model_zero_coefs(self.federated_model, self.n_features)
 
@@ -53,6 +53,7 @@ class SGDRegressorClient(fl.client.NumPyClient):
     def _set_model_zero_coefs(self, model: SGDRegressor, n_features: int) -> None:
         model.intercept_ = np.zeros((1,))
         model.coef_ = np.zeros((n_features,))
+        model.feature_names_in_ = np.array(self.X_train.columns)
 
     def _set_model_coefs(self, model: SGDRegressor, params: List[np.ndarray]) -> None:
         """Sets the parameters of a sklean Regression model."""
@@ -77,20 +78,31 @@ class SGDRegressorClient(fl.client.NumPyClient):
         self._set_model_coefs(self.federated_model, parameters)
 
     def fit(self, parameters, config):
-        self.edge_model.partial_fit(self.X_train, self.y_train)
+        if self.train_sample:
+            sample_idxs = np.random.choice(len(self.X_train), self.train_sample)
+        else:
+            sample_idxs = np.arange(len(self.X_train))
+
+        self.edge_model.partial_fit(self.X_train.iloc[sample_idxs], self.y_train.iloc[sample_idxs])
         self.federated_model.set_params(**config)
-        self.federated_model.partial_fit(self.X_train, self.y_train)
+        self.federated_model.partial_fit(
+            self.X_train.iloc[sample_idxs], self.y_train.iloc[sample_idxs]
+        )
 
         federated_model_coefs = self._get_model_coefs(self.federated_model)
         n_samples = len(self.X_train)
-        metadata = {"client_name": self.name}
+        metadata = {
+            "client_name": self.name,
+            #"rmse": self._get_rmse(self.federated_model),
+            #"n_samples": len(sample_idxs),
+        }
 
         logging.info(f"Client {self.name} fit model with {n_samples} samples.")
         return federated_model_coefs, n_samples, metadata
 
     def _get_rmse(self, model: SGDRegressor) -> float:
         return mean_squared_error(
-            self.y_test, model.predict(self.X_test), squared=False
+            self.y_test.values, model.predict(self.X_test), squared=False
         )
 
     def evaluate(self, parameters, config):
@@ -104,7 +116,11 @@ class SGDRegressorClient(fl.client.NumPyClient):
         central_rmse = self._get_rmse(central_model)
         n_samples = len(self.X_test)
         # Make sure to leave the key name as r-squared
-        metrics = {"rmse": central_rmse}
+        metrics = {
+            "client_name": self.name,
+            "rmse": central_rmse,
+            "n_samples": n_samples,
+        }
         logging.info(
             f"Client {self.name} evaluated rmse: edge={edge_rmse} federated={federated_rmse} central={central_rmse}..."
         )
@@ -113,29 +129,37 @@ class SGDRegressorClient(fl.client.NumPyClient):
 
 if __name__ == "__main__":
     time.sleep(1)  # wait for server to start
-
-    # X, y = fetch_california_housing(return_X_y=True)
-    X, y, coef = make_regression(
-        n_samples=20_000,
-        n_features=5,
-        bias=-2.0,
-        n_informative=3,
-        noise=1,
-        random_state=42,
-        coef=True,
-    )
-    ClusteredDataset = ClusteredDataGenerator(
-        X, y, n_clusters=50, test_size=0.2, seed=42
-    )
+    if cfg.USE_HOUSING_DATA:
+        X, y = fetch_california_housing(return_X_y=True, as_frame=True)
+    else:
+        X, y, coef = make_regression(
+            n_samples=20_000,
+            n_features=5,
+            bias=-2.0,
+            n_informative=3,
+            noise=1,
+            random_state=42,
+            coef=True,
+        )
+        X = pd.DataFrame(X, columns = [f"feature_{i}" for i in range(X.shape[1])])
+    
     (
         X_train,
         X_test,
         y_train,
         y_test,
-    ) = ClusteredDataset.get_random_cluster_train_test_data()
+    ) = ClusteredDataGenerator(
+        pd.DataFrame(X),
+        pd.Series(y),
+        n_clusters=cfg.N_CLUSTERS,
+        test_size=cfg.TEST_SIZE,
+        seed=cfg.SEED,
+    ).get_random_cluster_train_test_data()
+    logging.debug(f"X_train shape: {X_train.shape} y_train shape: {y_train.shape}")
+    logging.debug(f"X_test shape: {X_test.shape} y_est shape: {y_test.shape}")
 
-    client = SGDRegressorClient(X_train, X_test, y_train, y_test)
-    server_address = f"{client_config.SERVER_ADDRESS}:{client_config.SERVER_PORT}"
+    client = SGDRegressorClient(X_train, X_test, y_train, y_test, train_sample=cfg.TRAIN_SAMPLE)
+    server_address = f"{cfg.SERVER_ADDRESS}:{cfg.SERVER_PORT}"
 
     while True:
         try:
@@ -143,7 +167,7 @@ if __name__ == "__main__":
         except Exception as e:
             logging.exception(e)
             logging.warning(
-                f"Could not connect to server: sleeping for {client_config.RETRY_SLEEP_TIME} seconds..."
+                f"Could not connect to server: sleeping for {cfg.RETRY_SLEEP_TIME} seconds..."
             )
 
-        time.sleep(client_config.RETRY_SLEEP_TIME)
+        time.sleep(cfg.RETRY_SLEEP_TIME)

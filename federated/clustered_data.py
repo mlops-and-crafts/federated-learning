@@ -10,14 +10,13 @@ from sklearn.cluster import KMeans
 class ClusteredDataGenerator:
     def __init__(
         self,
-        X: Union[np.ndarray, pd.DataFrame],
-        y: np.ndarray,
+        X: pd.DataFrame,
+        y: pd.Series,
         n_clusters: int = 10,
-        cluster_cols: List[str]=None,
+        cluster_cols: List[str] = None,
         seed: int = 42,
         test_size: float = 0.2,
-        strategy: str="kmeans",
-        
+        strategy: str = "kmeans",
     ):
         self.n_clusters = n_clusters
         self.cluster_cols = cluster_cols
@@ -31,7 +30,9 @@ class ClusteredDataGenerator:
         elif strategy == "random":
             self.cluster_ids = self._random_cluster_ids()
         else:
-            raise ValueError(f"strategy {strategy} not supported. Use either 'kmeans' or 'random'")
+            raise ValueError(
+                f"strategy {strategy} not supported. Use either 'kmeans' or 'random'"
+            )
 
     def _random_cluster_ids(self) -> np.ndarray:
         """assign each data point in X_train a random cluster id between 0 and self.n_clusters"""
@@ -41,17 +42,21 @@ class ClusteredDataGenerator:
         if self.cluster_cols is not None and isinstance(self.X_train, pd.DataFrame):
             X = self.X_train[self.cluster_cols]
         else:
-            X  = self.X_train
-        return KMeans(n_clusters=self.n_clusters, random_state=self.seed).fit_predict(X)
+            X = self.X_train
+        return KMeans(n_clusters=self.n_clusters, random_state=self.seed, n_init=10).fit_predict(X)
 
     def get_train_test_data(
         self,
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
         return self.X_train, self.X_test, self.y_train, self.y_test
 
     def get_cluster_train_test_data(
         self, cluster_id: int
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
+        if cluster_id > self.n_clusters:
+            raise ValueError(
+                f"cluster_id {cluster_id} is larger than number of clusters {self.n_clusters}"
+            )
         X = self.X_train[self.cluster_ids == cluster_id]
         y = self.y_train[self.cluster_ids == cluster_id]
         X_train, X_test, y_train, y_test = train_test_split(
@@ -61,7 +66,7 @@ class ClusteredDataGenerator:
 
     def get_random_cluster_train_test_data(
         self,
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
         """Return X, y with where self.cluster_ids equals a random cluster_id"""
         cluster_id = np.random.choice(self.n_clusters)
         return self.get_cluster_train_test_data(cluster_id)

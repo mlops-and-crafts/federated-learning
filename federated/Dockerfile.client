@@ -7,14 +7,9 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY clustered_data.py .
-
-## ADD IP ENV variable
-ENV SERVER_ADDRESS=0.0.0.0
-ENV SERVER_PORT=8080
-
-
+COPY cfg.py .
 COPY client.py .
 
 EXPOSE 8080
 
-CMD ["python3", "client.py"] 
+ENTRYPOINT ["python3", "client.py"] 
