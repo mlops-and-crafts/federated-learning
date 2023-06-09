@@ -126,6 +126,5 @@ if __name__ == "__main__":
                     round_timeout=cfg.ROUND_TIMEOUT,
                 ),
             )
-
         except Exception as e:
             logging.exception(e)

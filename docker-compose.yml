@@ -13,6 +13,7 @@ services:
     ports:
       - 8080:8080
     restart: on-failure
+    stop_signal: SIGINT
   client: # You can use the client from the solutions of exercise 2: "docker build -t client 'solutions/exercise 2/'"
     image: federated-client
     build:
@@ -24,6 +25,7 @@ services:
       SERVER_ADDRESS: "server"
     deploy:
       replicas: 2
+    stop_signal: SIGINT
   dashboard:
     image: federated-dashboard
     build:
@@ -36,5 +38,6 @@ services:
     environment:
       DASHBOARD_PORT: 8050
     restart: on-failure
+    stop_signal: SIGINT
 
   
