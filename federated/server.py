@@ -13,7 +13,9 @@ from clustered_data import ClusteredDataGenerator
 import cfg
 
 logger = logging.getLogger("flwr")
-
+fh = logging.FileHandler(f'{cfg.LOGFILE_DIR}/server.log')
+fh.setLevel(logging.INFO)
+logger.addHandler(fh)
 
 def fit_metrics_aggregation_fn(metrics):
     clients_string = ""
@@ -47,8 +49,6 @@ def evaluate_metrics_aggregation_fn(metrics):
         f"AVG client RMSE: {avg_rmse:.2f} (central={central_rmse}), "
         f"STD client RMSE: {std_rmse:.2f}"
     )
-
-    # TODO: store metrics to disk for display in dashboard
 
     return {
         "connected_clients": clients_string,

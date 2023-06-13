@@ -25,6 +25,10 @@ server:
 clients:
 	docker-compose up client -d
 
+# start only the dashboard
+dashboard:
+	docker-compose up dashboard -d
+
 # Stop and remove all containers
 stop:
 	docker-compose down
