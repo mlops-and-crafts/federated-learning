@@ -13,7 +13,7 @@ from clustered_data import ClusteredDataGenerator
 import cfg
 
 logger = logging.getLogger("flwr")
-fh = logging.FileHandler(f'{cfg.LOGFILE_DIR}/server.log')
+fh = logging.FileHandler(f'{cfg.LOGFILE_DIR}/server.log', mode='w')
 fh.setLevel(logging.INFO)
 logger.addHandler(fh)
 
