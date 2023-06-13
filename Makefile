@@ -13,7 +13,7 @@ help:
 	} \
 	{ lastLine = $$0 }' $(MAKEFILE_LIST)
 
-# Run the entire application
+# Run the entire application locally
 run:
 	docker-compose up -d && docker-compose logs -f -t
 
@@ -41,3 +41,7 @@ restart:
 # Show the logs of all containers
 log:
 	docker-compose logs -f -t
+
+# rebuild the containers without cache
+build:
+	docker-compose build --no-cache
