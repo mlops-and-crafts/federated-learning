@@ -13,9 +13,10 @@ from clustered_data import ClusteredDataGenerator
 import cfg
 
 logger = logging.getLogger("flwr")
-fh = logging.FileHandler(f'{cfg.LOGFILE_DIR}/server.log', mode='w')
-fh.setLevel(logging.INFO)
-logger.addHandler(fh)
+filehandler = logging.FileHandler(f'{cfg.LOGFILE_DIR}/server.log', mode='w')
+filehandler.setLevel(logging.INFO)
+logger.addHandler(filehandler)
+
 
 def fit_metrics_aggregation_fn(metrics):
     clients_string = ""
