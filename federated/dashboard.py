@@ -5,7 +5,7 @@ from typing import Union, List, Dict
 import numpy as np
 import pandas as pd
 
-from dash import Dash, html, dcc
+from dash import Dash, html, dcc, no_update
 from dash.dependencies import Input, Output
 import plotly.express as px
 
@@ -45,14 +45,17 @@ app.layout = html.Div([
     Input('interval-ticker', 'n_intervals')
 )
 def update_data(n_intervals):
-    metrics_df = parse_server_metrics_from_log(server_log_path)
-    figure = px.line(
-        metrics_df, 
-        x=metrics_df.index, 
-        y="RMSE", 
-        title='RMSE against test data for federated model'
-    )
-    return figure
+    if server_log_path.exists():
+        metrics_df = parse_server_metrics_from_log(server_log_path)
+        if "RMSE" in metrics_df.columns:
+            figure = px.line(
+                metrics_df, 
+                x=metrics_df.index, 
+                y="RMSE", 
+                title='RMSE against test data for federated model'
+            )
+            return figure
+    return no_update
 
 if __name__ == "__main__":
     app.run('0.0.0.0', port=cfg.DASHBOARD_PORT)
