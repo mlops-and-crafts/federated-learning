@@ -9,7 +9,7 @@ from sklearn.datasets import fetch_california_housing, make_regression
 from sklearn.linear_model import SGDRegressor, LinearRegression
 from sklearn.metrics import mean_squared_error
 
-from clustered_data import ClusteredDataGenerator
+from clustered_data import ClusteredScaledDataGenerator
 import cfg
 
 logger = logging.getLogger("flwr")
@@ -91,7 +91,7 @@ if __name__ == "__main__":
         X = pd.DataFrame(X, columns=[f"feature_{i}" for i in range(X.shape[1])])
         logger.info(f"TRUE COEFFICIENTS: {coef}")
 
-    X_train, X_test, y_train, y_test = ClusteredDataGenerator(
+    X_train, X_test, y_train, y_test = ClusteredScaledDataGenerator(
         pd.DataFrame(X),
         pd.Series(y),
         n_clusters=cfg.N_CLUSTERS,

@@ -14,7 +14,7 @@ from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 
 import cfg
-from clustered_data import ClusteredDataGenerator
+from clustered_data import ClusteredScaledDataGenerator
 
 logging.basicConfig(level=logging.DEBUG)
 ssl._create_default_https_context = ssl._create_unverified_context
@@ -53,7 +53,7 @@ class SGDRegressorClient(fl.client.NumPyClient):
 
     def _set_model_zero_coefs(self, model: SGDRegressor, n_features: int) -> None:
         """flwr sever calls a random client for initial params, so we have to set them"""
-        model.intercept_ = np.zeros((1,))
+        model.intercept_ = np.array([self.y_train.mean(), ])
         model.coef_ = np.zeros((n_features,))
         model.feature_names_in_ = np.array(self.X_train.columns)
 
@@ -153,7 +153,7 @@ if __name__ == "__main__":
         X_test,
         y_train,
         y_test,
-    ) = ClusteredDataGenerator(
+    ) = ClusteredScaledDataGenerator(
         pd.DataFrame(X),
         pd.Series(y),
         n_clusters=cfg.N_CLUSTERS,

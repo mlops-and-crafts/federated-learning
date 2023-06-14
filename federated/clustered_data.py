@@ -4,10 +4,11 @@ import numpy as np
 import pandas as pd
 
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 
 
-class ClusteredDataGenerator:
+class ClusteredScaledDataGenerator:
     def __init__(
         self,
         X: pd.DataFrame,
@@ -25,6 +26,16 @@ class ClusteredDataGenerator:
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
             X, y, test_size=test_size, random_state=seed
         )
+        scaler = StandardScaler()
+        self.X_train = pd.DataFrame(
+            scaler.fit_transform(self.X_train),
+            columns = self.X_train.columns,
+        )
+        self.X_test = pd.DataFrame(
+            scaler.transform(self.X_test),
+            columns = self.X_test.columns,
+        )
+
         if strategy == "kmeans":
             self.cluster_ids = self._kmeans_cluster_ids()
         elif strategy == "random":
