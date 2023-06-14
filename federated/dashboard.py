@@ -11,7 +11,6 @@ import plotly.express as px
 
 import cfg
 
-
 def parse_server_metrics_from_log(server_log_path:Union[str, Path]) -> pd.DataFrame:
     result_dict = dict()
     with open(Path(server_log_path), 'r') as f:
@@ -42,8 +41,8 @@ app.layout = html.Div([
 ])
 
 @app.callback(
-        Output('federated-rmse-graph', 'figure'), 
-        Input('interval-ticker', 'n_intervals')
+    Output('federated-rmse-graph', 'figure'), 
+    Input('interval-ticker', 'n_intervals')
 )
 def update_data(n_intervals):
     metrics_df = parse_server_metrics_from_log(server_log_path)
@@ -51,7 +50,7 @@ def update_data(n_intervals):
         metrics_df, 
         x=metrics_df.index, 
         y="RMSE", 
-        title='Federated loss'
+        title='RMSE against test data for federated model'
     )
     return figure
 
