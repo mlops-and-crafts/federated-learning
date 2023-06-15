@@ -25,7 +25,6 @@ def parse_server_metrics_from_log(server_log_path:Union[str, Path]) -> pd.DataFr
     return result_df
 
 server_log_path = Path(f'{cfg.LOGFILE_DIR}/server.log')
-loss_data = parse_server_metrics_from_log(server_log_path)
 
 app = Dash(__name__)
 app.title = "Federated Learning Dashboard"
