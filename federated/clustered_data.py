@@ -7,16 +7,17 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 
+import cfg
 
 class ClusteredScaledDataGenerator:
     def __init__(
         self,
         X: pd.DataFrame,
         y: pd.Series,
-        n_clusters: int = 10,
+        n_clusters: int = cfg.N_CLUSTERS,
         cluster_cols: List[str] = None,
-        seed: int = 42,
-        test_size: float = 0.2,
+        seed: int = cfg.SEED,
+        test_size: float = cfg.TEST_SIZE,
         strategy: str = "kmeans",
     ):
         self.n_clusters = n_clusters
@@ -81,5 +82,9 @@ class ClusteredScaledDataGenerator:
         self,
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
         """Return X, y with where self.cluster_ids equals a random cluster_id"""
-        cluster_id = np.random.choice(self.n_clusters)
-        return self.get_cluster_train_test_data(cluster_id)
+        np.random.seed()
+        X_train = pd.DataFrame()
+        while len(X_train) < 50:
+            cluster_id = np.random.choice(self.n_clusters)
+            X_train, X_test, y_train, y_test = self.get_cluster_train_test_data(cluster_id)
+        return X_train, X_test, y_train, y_test
