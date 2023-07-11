@@ -13,9 +13,8 @@ from sklearn.datasets import fetch_california_housing, make_regression
 from sklearn.linear_model import SGDRegressor, LinearRegression
 from sklearn.metrics import mean_squared_error
 
-from clustered_data import ClusteredScaledDataGenerator
+from helpers import ClusteredScaledDataGenerator, MetricsJSONstore
 import cfg
-from metrics import MetricsJSONstore
 
 logger = logging.getLogger("flwr")
 filehandler = logging.FileHandler(f'{cfg.LOGFILE_DIR}/server.log', mode='w')

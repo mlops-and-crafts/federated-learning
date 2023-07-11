@@ -1,4 +1,5 @@
-from typing import Tuple, Union, List
+from typing import Tuple, Union, List, Dict, Optional
+import json
 
 import numpy as np
 import pandas as pd
@@ -88,3 +89,28 @@ class ClusteredScaledDataGenerator:
             cluster_id = np.random.choice(self.n_clusters)
             X_train, X_test, y_train, y_test = self.get_cluster_train_test_data(cluster_id)
         return X_train, X_test, y_train, y_test
+    
+
+class MetricsJSONstore:
+    def __init__(self, metrics_file: str = cfg.METRICS_FILE):
+        self.metrics_file = metrics_file
+        self.metrics = {"server":[], "clients_fit":[], "clients_evaluate": []}
+
+    def log_server_metrics(self, metrics: Dict[str, Union[str, float, np.ndarray]], save=True) -> None:
+        self.metrics["server"].append(metrics)
+        if save: self.save()
+
+    def log_client_fit_metrics(self, metrics: Dict[str, Union[str, float, np.ndarray]], save=True) -> None:
+        self.metrics["clients_fit"].append(metrics)
+        if save: self.save()
+
+    def log_client_evaluate_metrics(self, metrics: Dict[str, Union[str, float, np.ndarray]], save=True) -> None:
+        self.metrics["clients_evaluate"].append(metrics)
+        if save: self.save()
+
+    def save(self) -> None:
+        json.dump(self.metrics, open(self.metrics_file, "w"))
+
+    def load(self) -> Dict:
+        self.metrics = json.load(open(self.metrics_file, "r"))
+        return self.metrics

@@ -14,7 +14,7 @@ from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 
 import cfg
-from clustered_data import ClusteredScaledDataGenerator
+from helpers import ClusteredScaledDataGenerator
 
 logging.basicConfig(level=logging.DEBUG)
 ssl._create_default_https_context = ssl._create_unverified_context

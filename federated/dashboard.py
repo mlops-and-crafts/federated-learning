@@ -11,11 +11,10 @@ from dash.dependencies import Input, Output
 import plotly.express as px
 
 import cfg
-from metrics import MetricsJSONstore
+from helpers import MetricsJSONstore
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("federated-dashboard")
-
 
 app = Dash(__name__)
 app.title = "Federated Learning Dashboard"
