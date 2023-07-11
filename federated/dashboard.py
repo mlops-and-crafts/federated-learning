@@ -1,6 +1,7 @@
 import re
 from pathlib import Path
 from typing import Union, List, Dict
+import logging
 
 import numpy as np
 import pandas as pd
@@ -10,6 +11,9 @@ from dash.dependencies import Input, Output
 import plotly.express as px
 
 import cfg
+
+logger = logging.getLogger("federated-dashboard")
+
 
 def parse_server_metrics_from_log(server_log_path:Union[str, Path]) -> pd.DataFrame:
     result_dict = dict()
@@ -54,6 +58,7 @@ def update_data(n_intervals):
                 title='RMSE against test data for federated model'
             )
             return figure
+    logger.info(f"Server log file {server_log_path} does not exist yet")
     return no_update
 
 if __name__ == "__main__":
