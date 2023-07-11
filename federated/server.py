@@ -1,5 +1,6 @@
 import logging
 import time
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -19,6 +20,18 @@ logger.addHandler(filehandler)
 
 
 def fit_metrics_aggregation_fn(metrics):
+    """
+    Aggregates the metrics returned by the clients after a round of training.
+    In our case we simply aggregate the names of the clients into a single string and log it.
+    Then we sleep for a few seconds until the next round of federating learning. 
+
+    Args:
+        metrics (List[Tuple[fl.server.client_proxy.ClientProxy, fl.common.FitRes]]): A list of tuples containing the
+        client proxy and the fit results returned by the client.
+
+    Returns:
+        dict: A dictionary containing the connected clients' names that finished FIT this round.
+    """
     clients_string = ""
     for i, client_fit_metrics in enumerate(metrics):
         clients_string += " " + client_fit_metrics[1]["client_name"]
@@ -33,6 +46,20 @@ def fit_metrics_aggregation_fn(metrics):
 
 
 def evaluate_metrics_aggregation_fn(metrics):
+    """
+    Aggregates the metrics returned by the clients after a round of evaluation.
+    The function calculates the average and standard deviation of the RMSE (root mean squared error) values
+    returned by the clients, and logs the connected client names, the average RMSE, and the standard deviation
+    of the RMSE.
+
+    Args:
+        metrics (List[Tuple[fl.server.client_proxy.ClientProxy, fl.common.EvaluateRes]]): A list of tuples containing
+        the client proxy and the evaluation results returned by the client.
+
+    Returns:
+        dict: A dictionary containing the connected clients' names that finished EVALUATE this round, the average RMSE,
+        and the standard deviation of the RMSE.
+    """
     clients_string = ""
     client_rmses = []
     for i, client_metrics in enumerate(metrics):
@@ -59,6 +86,17 @@ def evaluate_metrics_aggregation_fn(metrics):
 
 
 def evaluate_fn(server_round, parameters, config):
+    """
+    Evaluates the federated model using the given parameters and configuration.
+
+    Args:
+        server_round (int): The current server round.
+        parameters (list): A list containing the intercept and coefficients of the model.
+        config (dict): A dictionary containing the configuration of the model.
+
+    Returns:
+        tuple: A tuple containing the federated RMSE and a dictionary of metrics.
+    """
     federated_model.set_params(**config)
     federated_model.intercept_ = parameters[0]
     federated_model.coef_ = parameters[1]
@@ -74,7 +112,35 @@ def evaluate_fn(server_round, parameters, config):
     return federated_rmse, metrics_dict
 
 
-# Start Flower server for five rounds of federated learning
+
+class CustomFedAvgStrategy(fl.server.strategy.FedAvg):
+    """
+    A custom implementation of the FedAvg strategy that logs client fit results.
+
+    Inherits from `fl.server.strategy.FedAvg`.
+
+    Attributes:
+        None
+
+    Methods:
+        aggregate_fit(server_round, results, failures):
+            Aggregates the fit results from the clients and logs them.
+
+    Usage:
+        Use this class to create a custom FedAvg strategy that logs client fit results.
+    """
+
+    def aggregate_fit(
+        self,
+        server_round: int,
+        results: List[Tuple[fl.server.client_proxy.ClientProxy, fl.common.FitRes]],
+        failures: List[Union[Tuple[fl.server.client_proxy.ClientProxy, fl.common.FitRes], BaseException]],
+    ) -> Tuple[Optional[fl.common.typing.Parameters], Dict[str, fl.common.typing.Scalar]]:
+        aggregated_parameters, aggregated_metrics = super().aggregate_fit(server_round, results, failures)
+        # TODO: log client fit results
+        return aggregated_parameters, aggregated_metrics
+
+
 if __name__ == "__main__":
     if cfg.USE_HOUSING_DATA:
         X, y = fetch_california_housing(return_X_y=True)
@@ -98,6 +164,7 @@ if __name__ == "__main__":
         test_size=cfg.TEST_SIZE,
         seed=cfg.SEED,
     ).get_train_test_data()
+
     logger.debug(
         f"SERVER X_train shape: {X_train.shape} y_train shape: {y_train.shape}"
     )
@@ -113,12 +180,13 @@ if __name__ == "__main__":
     federated_model = SGDRegressor()
     while True:
         try:
-            strategy = fl.server.strategy.FedAvg(
+            strategy = CustomFedAvgStrategy(
                 min_available_clients=cfg.MIN_CLIENTS,
                 fit_metrics_aggregation_fn=fit_metrics_aggregation_fn,
                 evaluate_fn=evaluate_fn,
                 evaluate_metrics_aggregation_fn=evaluate_metrics_aggregation_fn,
             )
+
             fl.server.start_server(
                 server_address=f"0.0.0.0:{cfg.SERVER_PORT}",
                 strategy=strategy,
