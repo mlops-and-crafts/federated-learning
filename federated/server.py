@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 import flwr as fl
+from flwr.server.client_proxy import ClientProxy
 from sklearn.datasets import fetch_california_housing, make_regression
 from sklearn.linear_model import SGDRegressor, LinearRegression
 from sklearn.metrics import mean_squared_error
@@ -23,7 +24,7 @@ logger.addHandler(filehandler)
 metrics = MetricsJSONstore(cfg.METRICS_FILE)
             
 
-def fit_metrics_aggregation_fn(metrics):
+def fit_metrics_aggregation_fn(metrics:List[Tuple[ClientProxy, fl.common.FitRes]]):
     """
     Aggregates the metrics returned by the clients after a round of training.
     In our case we simply aggregate the names of the clients into a single string and log it.
@@ -70,7 +71,7 @@ def evaluate_metrics_aggregation_fn(metrics):
         clients_string += " " + client_metrics[1]["client_name"]
         if i % 5 == 0 and i != 0:
             clients_string += "\n"
-        client_rmses.append(client_metrics[1]["rmse"])
+        client_rmses.append(client_metrics[1]["federated_rmse"])
 
     avg_rmse = np.mean(client_rmses)
     std_rmse = np.std(client_rmses)
@@ -147,16 +148,35 @@ class CustomFedAvgStrategy(fl.server.strategy.FedAvg):
     ) -> Tuple[Optional[fl.common.typing.Parameters], Dict[str, fl.common.typing.Scalar]]:
         aggregated_parameters, aggregated_metrics = super().aggregate_fit(server_round, results, failures)
         # TODO: log client fit results
+
+        for clientproxy, result in results:
+            client_fit_metrics = {
+                "server_round": server_round,
+                "client_name": result.metrics["client_name"],
+                "n_samples": result.metrics["n_samples"],
+            }
+            metrics.log_client_fit_metrics(client_fit_metrics)
         return aggregated_parameters, aggregated_metrics
     
     def aggregate_evaluate(
         self,
         server_round: int,
-        results: List[Tuple[fl.server.client_proxy.ClientProxy, fl.common.EvaluateRes]],
-        failures: List[Union[Tuple[fl.server.client_proxy.ClientProxy, fl.common.EvaluateRes], BaseException]],
+        results: List[Tuple[ClientProxy, fl.common.EvaluateRes]],
+        failures: List[Union[Tuple[ClientProxy, fl.common.EvaluateRes], BaseException]],
     ) -> Tuple[Optional[float], Dict[str, fl.common.typing.Scalar]]:
         loss_aggregated, metrics_aggregated = super().aggregate_evaluate(server_round, results, failures)
-        # TODO: log client evaluate results
+        for clientproxy, result in results:
+            logger.info(f"EVALUATE clientproxy {clientproxy} result {result}")
+            client_evaluate_metrics = {
+                "server_round": server_round,
+                "client_name": result.metrics["client_name"],
+                "n_samples": result.metrics["n_samples"],
+                "edge_rmse": result.metrics["edge_rmse"],
+                "federated_rmse": result.metrics["federated_rmse"],
+                "central_rmse": result.metrics["central_rmse"],
+                
+            }
+            metrics.log_client_evaluate_metrics(client_evaluate_metrics)
         return loss_aggregated, metrics_aggregated
 
 
