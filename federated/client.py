@@ -1,7 +1,5 @@
 import logging
 import time
-import os
-import ssl
 from typing import Dict, List, Tuple
 
 import flwr as fl
@@ -11,13 +9,11 @@ import pandas as pd
 from sklearn.datasets import fetch_california_housing, make_regression
 from sklearn.linear_model import SGDRegressor
 from sklearn.metrics import mean_squared_error
-from sklearn.model_selection import train_test_split
 
 import cfg
-from helpers import ClusteredScaledDataGenerator
+from helpers import ClusteredScaledDataGenerator, get_test_rmse_from_parameters
 
 logging.basicConfig(level=logging.DEBUG)
-ssl._create_default_https_context = ssl._create_unverified_context
 
 
 class SGDRegressorClient(fl.client.NumPyClient):
@@ -46,11 +42,6 @@ class SGDRegressorClient(fl.client.NumPyClient):
         self._set_model_zero_coefs(self.edge_model, self.n_features)
         self._set_model_zero_coefs(self.federated_model, self.n_features)
 
-        logging.debug(
-            f"Initialized {self.name} with "
-            f"X_train.shape={self.X_train.shape} X_test.shape={self.X_test.shape}..."
-        )
-
     def get_parameters(self, config)->List[np.ndarray]:
         """
         method required by flwr.NumPyClient that returns the model coefficients ('parameters')
@@ -58,7 +49,6 @@ class SGDRegressorClient(fl.client.NumPyClient):
         
         Returns a list of np.ndarrays with the model coefficients.
         """
-
         params = self._get_model_coefs(self.federated_model)
         logging.debug(f"Client {self.name} sending parameters: {params}")
         return params
@@ -116,17 +106,11 @@ class SGDRegressorClient(fl.client.NumPyClient):
         """
         edge_rmse = self._get_rmse(self.edge_model)
         federated_rmse = self._get_rmse(self.federated_model)
-
-        central_model = SGDRegressor()
-        central_model.set_params(**config)
-        self._set_model_coefs(central_model, parameters)
-        central_rmse = self._get_rmse(central_model)
-
-        n_samples = len(self.X_test)
+        central_rmse = get_test_rmse_from_parameters(parameters, config, self.X_test, self.y_test)
 
         metrics = {
             "client_name": self.name,
-            "n_samples": n_samples,
+            "n_samples": len(self.X_test),
             "edge_rmse": edge_rmse,
             "federated_rmse": federated_rmse,
             "central_rmse": central_rmse,
@@ -135,13 +119,13 @@ class SGDRegressorClient(fl.client.NumPyClient):
         logging.info(
             f"CLIENT EVAL {self.name} rmse: edge={edge_rmse} federated={federated_rmse} central={central_rmse}..."
         )
-        return central_rmse, n_samples, metrics
+        return central_rmse, len(self.X_test), metrics
     
     def _set_model_zero_coefs(self, model: SGDRegressor, n_features: int) -> None:
         """flwr sever calls a random client for initial params, so we have to initialize them with zero to make sure they are not empty"""
         model.intercept_ = np.array([0, ])
         model.coef_ = np.zeros((n_features,))
-        model.feature_names_in_ = np.array(self.X_train.columns)
+        model.feature_names_in_ = np.array(self.X_train.columns.tolist())
 
     def _set_model_coefs(self, model: SGDRegressor, parameters: List[np.ndarray]) -> None:
         """Sets the parameters of a sklean SGDRegressor model."""

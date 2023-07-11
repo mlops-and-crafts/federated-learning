@@ -1,20 +1,37 @@
 from typing import Tuple, Union, List, Dict, Optional
 import json
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import SGDRegressor
+from sklearn.metrics import mean_squared_error
 from sklearn.cluster import KMeans
 
 import cfg
 
+
+def get_test_rmse_from_parameters(parameters, config, X_test:pd.DataFrame, y_test:pd.Series):
+    model = SGDRegressor()
+    model.set_params(**config)
+    model.intercept_ = parameters[0]
+    model.coef_ = parameters[1]
+    model.feature_names_in_ = np.array(X_test.columns.tolist())
+
+    rmse = mean_squared_error(
+        y_test.values, model.predict(X_test), squared=False
+    )
+    return rmse
+
+
 class ClusteredScaledDataGenerator:
     def __init__(
         self,
-        X: pd.DataFrame,
-        y: pd.Series,
+        X: Union[pd.DataFrame, np.ndarray],
+        y: Union[pd.Series, np.ndarray],
         n_clusters: int = cfg.N_CLUSTERS,
         cluster_cols: List[str] = None,
         seed: int = cfg.SEED,
@@ -26,7 +43,7 @@ class ClusteredScaledDataGenerator:
         self.seed = seed
         self.test_size = test_size
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
-            X, y, test_size=test_size, random_state=seed
+            pd.DataFrame(X), pd.Series(y), test_size=test_size, random_state=seed
         )
         scaler = StandardScaler()
         self.X_train = pd.DataFrame(
@@ -112,5 +129,8 @@ class MetricsJSONstore:
         json.dump(self.metrics, open(self.metrics_file, "w"))
 
     def load(self) -> Dict:
-        self.metrics = json.load(open(self.metrics_file, "r"))
+        if Path(self.metrics_file).exists():
+            self.metrics = json.load(open(self.metrics_file, "r"))
+        else:
+            self.metrics = {"server":[], "clients_fit":[], "clients_evaluate": []}
         return self.metrics

@@ -56,42 +56,43 @@ app.layout = html.Div([
 def update_data(n_intervals):
     try:
         metrics = MetricsJSONstore(cfg.METRICS_FILE).load()
-        server_metrics_df = pd.DataFrame(metrics["server"])
         
+        server_metrics_df = pd.DataFrame(metrics["server"])
         server_federated_fig = px.line(
             server_metrics_df, x="server_round", y="rmse", 
             title='RMSE against test data for federated model'
-        )
-        client_fit_metrics_df = pd.DataFrame(metrics["clients_fit"])
+        ) if not server_metrics_df.empty else no_update
         
+        client_fit_metrics_df = pd.DataFrame(metrics["clients_fit"])
         client_central_fig = px.line(
             client_fit_metrics_df, x="server_round", y="client_rmse", 
             title='Central RMSE against test data for federated client models',
             color="client_name",
-        )
+        ) if not client_fit_metrics_df.empty else no_update
+
         client_eval_metrics_df = pd.DataFrame(metrics["clients_evaluate"])
+
+        client_federated_fig = px.line(
+            client_eval_metrics_df, x="server_round", y="federated_rmse", 
+            title='Federated RMSE against test data for client models',
+            color="client_name",
+        ) if not client_eval_metrics_df.empty else no_update
+        client_edge_fig = px.line(
+            client_eval_metrics_df, x="server_round", y="edge_rmse", 
+            title='Edge RMSE against test data for client models',
+            color="client_name",
+        ) if not client_eval_metrics_df.empty else no_update
+        client_central_fig = px.line(
+            client_eval_metrics_df, x="server_round", y="central_rmse", 
+            title='Central RMSE against test data for client models',
+            color="client_name",
+        ) if not client_eval_metrics_df.empty else no_update
 
         last_client_update_df = (
             client_eval_metrics_df[
                 client_eval_metrics_df.server_round == client_eval_metrics_df.server_round.max()
             ]
-        )
-        
-        client_federated_fig = px.line(
-            client_eval_metrics_df, x="server_round", y="federated_rmse", 
-            title='Federated RMSE against test data for client models',
-            color="client_name",
-        )
-        client_edge_fig = px.line(
-            client_eval_metrics_df, x="server_round", y="edge_rmse", 
-            title='Edge RMSE against test data for client models',
-            color="client_name",
-        )
-        client_central_fig = px.line(
-            client_eval_metrics_df, x="server_round", y="central_rmse", 
-            title='Central RMSE against test data for client models',
-            color="client_name",
-        )
+        ) if not client_eval_metrics_df.empty else pd.DataFrame()
         return (
             server_federated_fig, 
             client_central_fig,
