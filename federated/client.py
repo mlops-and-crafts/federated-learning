@@ -66,6 +66,11 @@ class SGDRegressorClient(fl.client.NumPyClient):
         """Returns the paramters of a sklearn LinearRegression model."""
         coefs = [model.intercept_, model.coef_]
         return coefs
+    
+    def _get_rmse(self, model: SGDRegressor) -> float:
+        return mean_squared_error(
+            self.y_test.values, model.predict(self.X_test), squared=False
+        )
 
     def get_parameters(self, config):
         params = self._get_model_coefs(self.federated_model)
@@ -96,19 +101,16 @@ class SGDRegressorClient(fl.client.NumPyClient):
         )
 
         federated_model_coefs = self._get_model_coefs(self.federated_model)
-        n_samples = len(self.X_train)
+        n_samples = len(sample_idxs)
         fit_metrics = {
             "client_name": self.name,
-            "n_samples": len(sample_idxs),
+            "n_samples": n_samples,
         }
 
         logging.info(f"Client {self.name} fit model with {n_samples} samples.")
         return federated_model_coefs, n_samples, fit_metrics
 
-    def _get_rmse(self, model: SGDRegressor) -> float:
-        return mean_squared_error(
-            self.y_test.values, model.predict(self.X_test), squared=False
-        )
+    
 
     def evaluate(self, parameters, config): # TODO: check where this parameters come from
         edge_rmse = self._get_rmse(self.edge_model)
@@ -117,8 +119,8 @@ class SGDRegressorClient(fl.client.NumPyClient):
         central_model = SGDRegressor()
         central_model.set_params(**config)
         self._set_model_coefs(central_model, parameters)
-
         central_rmse = self._get_rmse(central_model)
+
         n_samples = len(self.X_test)
 
         metrics = {
