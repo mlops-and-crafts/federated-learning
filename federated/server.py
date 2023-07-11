@@ -1,5 +1,6 @@
 import logging
 import time
+import json
 from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
@@ -12,12 +13,15 @@ from sklearn.metrics import mean_squared_error
 
 from clustered_data import ClusteredScaledDataGenerator
 import cfg
+from metrics import MetricsJSONstore
 
 logger = logging.getLogger("flwr")
 filehandler = logging.FileHandler(f'{cfg.LOGFILE_DIR}/server.log', mode='w')
 filehandler.setLevel(logging.INFO)
 logger.addHandler(filehandler)
 
+metrics = MetricsJSONstore(cfg.METRICS_FILE)
+            
 
 def fit_metrics_aggregation_fn(metrics):
     """
@@ -78,6 +82,7 @@ def evaluate_metrics_aggregation_fn(metrics):
         f"STD client RMSE: {std_rmse:.2f}"
     )
 
+
     return {
         "connected_clients": clients_string,
         "avg_rmse": avg_rmse,
@@ -105,17 +110,19 @@ def evaluate_fn(server_round, parameters, config):
         y_test.values, federated_model.predict(X_test), squared=False
     )
     federated_r_squared = federated_model.score(X_test, y_test)
-    metrics_dict = {"rmse": federated_rmse, "r_squared": federated_r_squared}
+    metrics_dict = {"server_round": server_round, "rmse": federated_rmse, "r_squared": federated_r_squared}
     logger.info(
         f"SERVER Round {server_round} RMSE: {federated_rmse} R^2: {federated_r_squared} coefs = {parameters}"
     )
+
+    metrics.log_server_metrics(metrics_dict)
     return federated_rmse, metrics_dict
 
 
 
 class CustomFedAvgStrategy(fl.server.strategy.FedAvg):
     """
-    A custom implementation of the FedAvg strategy that logs client fit results.
+    A custom implementation of the FedAvg strategy that logs client fit and client evaluate results.
 
     Inherits from `fl.server.strategy.FedAvg`.
 
@@ -124,6 +131,8 @@ class CustomFedAvgStrategy(fl.server.strategy.FedAvg):
 
     Methods:
         aggregate_fit(server_round, results, failures):
+            Aggregates the fit results from the clients and logs them.
+        aggregate_evaluate(server_round, results, failures):
             Aggregates the fit results from the clients and logs them.
 
     Usage:
@@ -139,6 +148,16 @@ class CustomFedAvgStrategy(fl.server.strategy.FedAvg):
         aggregated_parameters, aggregated_metrics = super().aggregate_fit(server_round, results, failures)
         # TODO: log client fit results
         return aggregated_parameters, aggregated_metrics
+    
+    def aggregate_evaluate(
+        self,
+        server_round: int,
+        results: List[Tuple[fl.server.client_proxy.ClientProxy, fl.common.EvaluateRes]],
+        failures: List[Union[Tuple[fl.server.client_proxy.ClientProxy, fl.common.EvaluateRes], BaseException]],
+    ) -> Tuple[Optional[float], Dict[str, fl.common.typing.Scalar]]:
+        loss_aggregated, metrics_aggregated = super().aggregate_evaluate(server_round, results, failures)
+        # TODO: log client evaluate results
+        return loss_aggregated, metrics_aggregated
 
 
 if __name__ == "__main__":

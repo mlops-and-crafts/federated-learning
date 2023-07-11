@@ -183,3 +183,4 @@ data/*
 
 # Roman stuff
 server_src/
+federated/metrics.json
