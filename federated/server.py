@@ -8,6 +8,7 @@ import pandas as pd
 
 import flwr as fl
 from flwr.server.client_proxy import ClientProxy
+from flwr.common import  parameters_to_ndarrays
 from sklearn.datasets import fetch_california_housing, make_regression
 from sklearn.linear_model import SGDRegressor, LinearRegression
 from sklearn.metrics import mean_squared_error
@@ -90,6 +91,16 @@ def evaluate_metrics_aggregation_fn(metrics):
         "std_rmse": std_rmse,
     }
 
+def _get_test_rmse_from_parameters(parameters, config):
+    model = SGDRegressor()
+    model.set_params(**config)
+    model.intercept_ = parameters[0]
+    model.coef_ = parameters[1]
+
+    rmse = mean_squared_error(
+        y_test.values, model.predict(X_test), squared=False
+    )
+    return rmse
 
 def evaluate_fn(server_round, parameters, config):
     """
@@ -154,6 +165,10 @@ class CustomFedAvgStrategy(fl.server.strategy.FedAvg):
                 "server_round": server_round,
                 "client_name": result.metrics["client_name"],
                 "n_samples": result.metrics["n_samples"],
+                "client_rmse": _get_test_rmse_from_parameters(
+                    parameters_to_ndarrays(result.parameters), 
+                    {}
+                )
             }
             metrics.log_client_fit_metrics(client_fit_metrics)
         return aggregated_parameters, aggregated_metrics

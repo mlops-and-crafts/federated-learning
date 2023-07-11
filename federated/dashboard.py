@@ -23,12 +23,17 @@ app.layout = html.Div([
     html.Div([
         dcc.Graph(id='federated-rmse-graph'),
     ]),
-
+    html.Div([
+        dcc.Graph(id='central-client-rmse-graph'),
+    ]),
     html.Div([
         dcc.Graph(id='client-federated-rmse-graph'),
     ]),
     html.Div([
         dcc.Graph(id='client-edge-rmse-graph'),
+    ]),
+    html.Div([
+        dcc.Graph(id='client-central-rmse-graph'),
     ]),
     html.Div([
         dash_table.DataTable(id='latest-client-metrics-table'),
@@ -42,8 +47,10 @@ app.layout = html.Div([
 
 @app.callback(
     Output('federated-rmse-graph', 'figure'), 
+    Output('central-client-rmse-graph', 'figure'), 
     Output('client-federated-rmse-graph', 'figure'), 
     Output('client-edge-rmse-graph', 'figure'), 
+    Output('client-central-rmse-graph', 'figure'), 
     Output('latest-client-metrics-table', 'data'),
     Input('interval-ticker', 'n_intervals')
 )
@@ -56,27 +63,48 @@ def update_data(n_intervals):
             server_metrics_df, x="server_round", y="rmse", 
             title='RMSE against test data for federated model'
         )
-        client_metrics_df = pd.DataFrame(metrics["clients_evaluate"])
+        client_fit_metrics_df = pd.DataFrame(metrics["clients_fit"])
+        
+        client_central_fig = px.line(
+            client_fit_metrics_df, x="server_round", y="client_rmse", 
+            title='Central RMSE against test data for federated client models',
+            color="client_name",
+        )
+        client_eval_metrics_df = pd.DataFrame(metrics["clients_evaluate"])
 
         last_client_update_df = (
-            client_metrics_df[client_metrics_df.server_round == client_metrics_df.server_round.max()]
+            client_eval_metrics_df[
+                client_eval_metrics_df.server_round == client_eval_metrics_df.server_round.max()
+            ]
         )
         
         client_federated_fig = px.line(
-            client_metrics_df, x="server_round", y="federated_rmse", 
+            client_eval_metrics_df, x="server_round", y="federated_rmse", 
             title='Federated RMSE against test data for client models',
             color="client_name",
         )
         client_edge_fig = px.line(
-            client_metrics_df, x="server_round", y="edge_rmse", 
+            client_eval_metrics_df, x="server_round", y="edge_rmse", 
             title='Edge RMSE against test data for client models',
             color="client_name",
         )
-        return server_federated_fig, client_federated_fig, client_edge_fig, last_client_update_df.to_dict('records')    
+        client_central_fig = px.line(
+            client_eval_metrics_df, x="server_round", y="central_rmse", 
+            title='Central RMSE against test data for client models',
+            color="client_name",
+        )
+        return (
+            server_federated_fig, 
+            client_central_fig,
+            client_federated_fig, 
+            client_edge_fig, 
+            client_central_fig, 
+            last_client_update_df.to_dict('records'),
+        )  
     
     except Exception as e:
         logger.error("Failed to display rmse graphs in dashboard:", e)
-        return no_update, no_update, no_update, no_update
+        return no_update, no_update, no_update, no_update, no_update, no_update
 
 if __name__ == "__main__":
     app.run('0.0.0.0', port=cfg.DASHBOARD_PORT)
