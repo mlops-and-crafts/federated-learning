@@ -28,7 +28,7 @@ class SGDRegressorClient(fl.client.NumPyClient):
         y_train: np.ndarray,
         y_test: np.ndarray,
         train_sample: int = None,
-        name="client",
+        name=cfg.CLIENT_ID,
     ):
         self.X_train = X_train
         self.X_test = X_test
@@ -123,9 +123,12 @@ class SGDRegressorClient(fl.client.NumPyClient):
 
         metrics = {
             "client_name": self.name,
-            "rmse": central_rmse,
             "n_samples": n_samples,
+            "edge_rmse": edge_rmse,
+            "federated_rmse": federated_rmse,
+            "central_rmse": central_rmse,
         }
+
         logging.info(
             f"Client {self.name} evaluated rmse: edge={edge_rmse} federated={federated_rmse} central={central_rmse}..."
         )
@@ -170,7 +173,10 @@ if __name__ == "__main__":
 
     while True:
         try:
-            fl.client.start_numpy_client(server_address=server_address, client=client)
+            fl.client.start_numpy_client(
+                server_address=server_address, 
+                client=client
+            )
         except Exception as e:
             logging.exception(e)
             logging.warning(
