@@ -51,40 +51,36 @@ class SGDRegressorClient(fl.client.NumPyClient):
             f"X_train.shape={self.X_train.shape} X_test.shape={self.X_test.shape}..."
         )
 
-    def _set_model_zero_coefs(self, model: SGDRegressor, n_features: int) -> None:
-        """flwr sever calls a random client for initial params, so we have to set them"""
-        model.intercept_ = np.array([self.y_train.mean(), ])
-        model.coef_ = np.zeros((n_features,))
-        model.feature_names_in_ = np.array(self.X_train.columns)
+    def get_parameters(self, config)->List[np.ndarray]:
+        """
+        method required by flwr.NumPyClient that returns the model coefficients ('parameters')
+        to the central server.
+        
+        Returns a list of np.ndarrays with the model coefficients.
+        """
 
-    def _set_model_coefs(self, model: SGDRegressor, params: List[np.ndarray]) -> None:
-        """Sets the parameters of a sklean Regression model."""
-        model.intercept_ = params[0]
-        model.coef_ = params[1]
-
-    def _get_model_coefs(self, model: SGDRegressor) -> List[np.ndarray]:
-        """Returns the paramters of a sklearn LinearRegression model."""
-        coefs = [model.intercept_, model.coef_]
-        return coefs
-    
-    def _get_rmse(self, model: SGDRegressor) -> float:
-        return mean_squared_error(
-            self.y_test.values, model.predict(self.X_test), squared=False
-        )
-
-    def get_parameters(self, config):
         params = self._get_model_coefs(self.federated_model)
         logging.debug(f"Client {self.name} sending parameters: {params}")
         return params
 
-    def set_parameters(self, parameters, config):
+    def set_parameters(self, parameters, config)->None:
+        """
+        method required by flwr.NumPyClient that receives the model coefficients ('parameters') and
+        hyperparameters ('config') from the central server, and set them in the client's model.
+        """
         logging.debug(
             f"Client {self.name} received parameters {parameters} and {config}"
         )
         self.federated_model.set_params(**config)
         self._set_model_coefs(self.federated_model, parameters)
 
-    def fit(self, parameters, config):
+    def fit(self, parameters, config) -> Tuple[List[np.ndarray], int, Dict[str, float]]:
+        """
+        method required by flwr.NumPyClient that receives the model coefficients ('parameters')
+        and hyperparameters ('config') from the central server, and fits the client's model.
+        
+        Returns updated coefficients, number of samples used for fitting, and fit metrics.
+        """
         self.set_parameters(parameters, config)
 
         if self.train_sample:
@@ -107,12 +103,17 @@ class SGDRegressorClient(fl.client.NumPyClient):
             "n_samples": n_samples,
         }
 
-        logging.info(f"Client {self.name} fit model with {n_samples} samples.")
+        logging.info(f"CLIENT FIT {self.name} fit model with {n_samples} samples.")
         return federated_model_coefs, n_samples, fit_metrics
 
-    
+    def evaluate(self, parameters, config) -> Tuple[float, int, Dict[str, float]]: 
+        """
+        method required by flwr.NumPyClient that receives the model coefficients ('parameters')
+        and hyperparameters ('config') from the central server, and evaluates the client's model
+        against the local test data.
 
-    def evaluate(self, parameters, config): # TODO: check where this parameters come from
+        Returns loss, number of samples used for evaluation, and evaluation metrics.
+        """
         edge_rmse = self._get_rmse(self.edge_model)
         federated_rmse = self._get_rmse(self.federated_model)
 
@@ -132,9 +133,30 @@ class SGDRegressorClient(fl.client.NumPyClient):
         }
 
         logging.info(
-            f"Client {self.name} evaluated rmse: edge={edge_rmse} federated={federated_rmse} central={central_rmse}..."
+            f"CLIENT EVAL {self.name} rmse: edge={edge_rmse} federated={federated_rmse} central={central_rmse}..."
         )
         return central_rmse, n_samples, metrics
+    
+    def _set_model_zero_coefs(self, model: SGDRegressor, n_features: int) -> None:
+        """flwr sever calls a random client for initial params, so we have to initialize them with zero to make sure they are not empty"""
+        model.intercept_ = np.array([0, ])
+        model.coef_ = np.zeros((n_features,))
+        model.feature_names_in_ = np.array(self.X_train.columns)
+
+    def _set_model_coefs(self, model: SGDRegressor, parameters: List[np.ndarray]) -> None:
+        """Sets the parameters of a sklean SGDRegressor model."""
+        model.intercept_ = parameters[0]
+        model.coef_ = parameters[1]
+
+    def _get_model_coefs(self, model: SGDRegressor) -> List[np.ndarray]:
+        """Returns the paramters of a sklearn LinearRegression model."""
+        coefs = [model.intercept_, model.coef_]
+        return coefs
+    
+    def _get_rmse(self, model: SGDRegressor) -> float:
+        return mean_squared_error(
+            self.y_test.values, model.predict(self.X_test), squared=False
+        )
 
 
 if __name__ == "__main__":
