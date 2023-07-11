@@ -116,7 +116,7 @@ class CustomFedAvgStrategy(fl.server.strategy.FedAvg):
 
 if __name__ == "__main__":
     if cfg.USE_HOUSING_DATA:
-        X, y = fetch_california_housing(return_X_y=True)
+        X, y = fetch_california_housing(return_X_y=True, as_frame=True)
     else:
         X, y, true_coefs = make_regression(
             n_samples=20_000,
@@ -151,7 +151,6 @@ if __name__ == "__main__":
                 min_available_clients=cfg.MIN_CLIENTS,
                 evaluate_fn=evaluate_fn,
             )
-
             fl.server.start_server(
                 server_address=f"0.0.0.0:{cfg.SERVER_PORT}",
                 strategy=strategy,
