@@ -7,7 +7,7 @@ USE_HOUSING_DATA = os.environ.get("USE_HOUSING_DATA", 1)
 # server config
 SLEEP_TIME_BETWEEN_ROUNDS = os.environ.get("FEDERATED_SLEEP_TIME", 1)
 MIN_CLIENTS = os.environ.get("FEDERATED_MIN_CLIENTS", 2)
-NUM_ROUNDS = os.environ.get("FEDERATED_NUM_ROUNDS", 200)
+NUM_ROUNDS = os.environ.get("FEDERATED_NUM_ROUNDS", 2000)
 ROUND_TIMEOUT = os.environ.get("FEDERATED_ROUND_TIMEOUT", 5)
 LOGFILE_DIR = os.environ.get("LOGFILE_DIR", '.')
 METRICS_FILE = os.environ.get("METRICS_FILE", 'metrics.json')
