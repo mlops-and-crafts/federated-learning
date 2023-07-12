@@ -45,3 +45,10 @@ log:
 # rebuild the containers without cache
 build:
 	docker-compose build --no-cache
+
+# Lint the python code using ruff and Dockerfiles using hadolint
+lint:
+	ruff federated
+	docker run --rm -i hadolint/hadolint < federated/Dockerfile.client
+	docker run --rm -i hadolint/hadolint < federated/Dockerfile.server
+	docker run --rm -i hadolint/hadolint < federated/Dockerfile.dashboard
