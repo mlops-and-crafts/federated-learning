@@ -21,14 +21,28 @@ from helpers import MetricsJSONstore
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("federated-dashboard")
 
-app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
+app = Dash(__name__, external_stylesheets=[dbc.themes.QUARTZ, dbc_css])
 app.title = "Federated Learning Dashboard"
 app.layout = dbc.Container([
+   
     dbc.NavbarSimple(
-        brand="Federated Learning Dashboard",
+        brand="MLOps and Crafts: Federated Learning Dashboard",
         color="primary",
+        brand_href="https://www.meetup.com/nl-NL/mlops-and-crafts/",
         style={"margin-bottom": 15},
     ),
+    dbc.Card([
+        dbc.CardHeader("Configuration"),
+        dbc.CardBody([
+             dash_table.DataTable(
+                id='config-table',
+                data=[{"USE_HOUSING_DATA": cfg.USE_HOUSING_DATA, "CLUSTER_METHOD": cfg.CLUSTER_METHOD}],
+                columns=[{"name": col, "id": col} for col in ["USE_HOUSING_DATA", "CLUSTER_METHOD"]],
+                
+            ),
+        ], className="dbc"),
+    ], style={"margin-bottom": 15}),
     dbc.Card([
         dbc.CardHeader("Federated vs Centralized model comparison"),
         dbc.CardBody([
@@ -61,12 +75,13 @@ app.layout = dbc.Container([
         dbc.CardBody([
             dbc.Row([
                 dbc.Col([
-                    dash_table.DataTable(id='latest-client-metrics-table'),
-                ]),
+                    dash_table.DataTable(id='latest-client-metrics-table', ),
+                ], className="dbc"),
                 dbc.Col([
-                    dcc.Dropdown(id='client-dropdown'),
+                    dbc.Label("Select client to compare edge vs federated performance", html_for='client-dropdown'),
+                    dbc.Select(id='client-dropdown', placeholder="Select client..."),
                     dcc.Graph(id='client-rmse-comparison-graph'),
-                ]),
+                ], style={"margin-top": 15}),
             ]),
         ]),
     ], style={"margin-bottom": 15}),
@@ -96,7 +111,10 @@ def update_metrics(n_intervals):
 def update_client_dropdown(metrics, client):
     if metrics is None:
         return [], no_update
-    client_names = list(set([client['client_name'] for client in metrics['clients_evaluate']]))
+    client_names = [
+        {"label": client_name, "value": client_name} 
+        for client_name in set([client['client_name'] for client in metrics['clients_evaluate']])
+    ]
     if not client:
         return client_names, client_names[0]
     return client_names, no_update
@@ -117,13 +135,15 @@ def updated_federated_graph(metrics):
                     x= server_metrics_df['server_round'].values,
                     y=server_metrics_df['rmse'].values,
                     name='Federated Model',
-                    line=dict(width=4) 
+                    line=dict(width=4),
+                    mode='lines',
                 ),
                 go.Scatter(
                     x= server_metrics_df['server_round'].values,
                     y=server_metrics_df['central_rmse'].values,
                     name='Central Model Baseline',
-                    line=dict(width=2) 
+                    line=dict(width=2),
+                    mode='lines',
                 ),
             ])
 
@@ -134,7 +154,8 @@ def updated_federated_graph(metrics):
                         x=sub_df['server_round'].values,
                         y=sub_df['client_rmse'].values,
                         name=client,
-                        line=dict(dash='dash')
+                        line=dict(dash='dash'),
+                        mode='lines',
                     )
                 )
             server_federated_fig.update_layout(title='federated RMSE against central test set')
