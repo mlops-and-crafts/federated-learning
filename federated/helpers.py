@@ -1,6 +1,6 @@
-from typing import Tuple, Union, List, Dict, Optional
-import json
+from typing import Tuple, Union, List, Dict
 from pathlib import Path
+import json
 
 import numpy as np
 import pandas as pd
@@ -14,16 +14,16 @@ from sklearn.cluster import KMeans
 import cfg
 
 
-def get_test_rmse_from_parameters(parameters, config, X_test:pd.DataFrame, y_test:pd.Series):
+def get_test_rmse_from_parameters(
+    parameters, config, X_test: pd.DataFrame, y_test: pd.Series
+):
     model = SGDRegressor()
     model.set_params(**config)
     model.intercept_ = parameters[0]
     model.coef_ = parameters[1]
     model.feature_names_in_ = np.array(X_test.columns.tolist())
 
-    rmse = mean_squared_error(
-        y_test.values, model.predict(X_test), squared=False
-    )
+    rmse = mean_squared_error(y_test.values, model.predict(X_test), squared=False)
     return rmse
 
 
@@ -48,11 +48,11 @@ class ClusteredScaledDataGenerator:
         scaler = StandardScaler()
         self.X_train = pd.DataFrame(
             scaler.fit_transform(self.X_train),
-            columns = self.X_train.columns,
+            columns=self.X_train.columns,
         )
         self.X_test = pd.DataFrame(
             scaler.transform(self.X_test),
-            columns = self.X_test.columns,
+            columns=self.X_test.columns,
         )
 
         if strategy == "kmeans":
@@ -104,26 +104,37 @@ class ClusteredScaledDataGenerator:
         X_train = pd.DataFrame()
         while len(X_train) < 50:
             cluster_id = np.random.choice(self.n_clusters)
-            X_train, X_test, y_train, y_test = self.get_cluster_train_test_data(cluster_id)
+            X_train, X_test, y_train, y_test = self.get_cluster_train_test_data(
+                cluster_id
+            )
         return X_train, X_test, y_train, y_test
-    
+
 
 class MetricsJSONstore:
     def __init__(self, metrics_file: str = cfg.METRICS_FILE):
         self.metrics_file = metrics_file
-        self.metrics = {"server":[], "clients_fit":[], "clients_evaluate": []}
+        self.metrics = {"server": [], "clients_fit": [], "clients_evaluate": []}
 
-    def log_server_metrics(self, metrics: Dict[str, Union[str, float, np.ndarray]], save=True) -> None:
+    def log_server_metrics(
+        self, metrics: Dict[str, Union[str, float, np.ndarray]], save=True
+    ) -> None:
         self.metrics["server"].append(metrics)
-        if save: self.save()
+        if save:
+            self.save()
 
-    def log_client_fit_metrics(self, metrics: Dict[str, Union[str, float, np.ndarray]], save=True) -> None:
+    def log_client_fit_metrics(
+        self, metrics: Dict[str, Union[str, float, np.ndarray]], save=True
+    ) -> None:
         self.metrics["clients_fit"].append(metrics)
-        if save: self.save()
+        if save:
+            self.save()
 
-    def log_client_evaluate_metrics(self, metrics: Dict[str, Union[str, float, np.ndarray]], save=True) -> None:
+    def log_client_evaluate_metrics(
+        self, metrics: Dict[str, Union[str, float, np.ndarray]], save=True
+    ) -> None:
         self.metrics["clients_evaluate"].append(metrics)
-        if save: self.save()
+        if save:
+            self.save()
 
     def save(self) -> None:
         json.dump(self.metrics, open(self.metrics_file, "w"))
@@ -132,5 +143,5 @@ class MetricsJSONstore:
         if Path(self.metrics_file).exists():
             self.metrics = json.load(open(self.metrics_file, "r"))
         else:
-            self.metrics = {"server":[], "clients_fit":[], "clients_evaluate": []}
+            self.metrics = {"server": [], "clients_fit": [], "clients_evaluate": []}
         return self.metrics

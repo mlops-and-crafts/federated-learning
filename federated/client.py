@@ -11,7 +11,7 @@ from sklearn.linear_model import SGDRegressor
 from sklearn.metrics import mean_squared_error
 
 import cfg
-from helpers import ClusteredScaledDataGenerator, get_test_rmse_from_parameters
+from helpers import ClusteredScaledDataGenerator
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -42,18 +42,18 @@ class SGDRegressorClient(fl.client.NumPyClient):
         self._set_model_zero_coefs(self.edge_model, self.n_features)
         self._set_model_zero_coefs(self.federated_model, self.n_features)
 
-    def get_parameters(self, config)->List[np.ndarray]:
+    def get_parameters(self, config) -> List[np.ndarray]:
         """
         method required by flwr.NumPyClient that returns the model coefficients ('parameters')
         to the central server.
-        
+
         Returns a list of np.ndarrays with the model coefficients.
         """
         params = self._get_model_coefs(self.federated_model)
         logging.debug(f"Client {self.name} sending parameters: {params}")
         return params
 
-    def set_parameters(self, parameters, config)->None:
+    def set_parameters(self, parameters, config) -> None:
         """
         method required by flwr.NumPyClient that receives the model coefficients ('parameters') and
         hyperparameters ('config') from the central server, and set them in the client's model.
@@ -68,7 +68,7 @@ class SGDRegressorClient(fl.client.NumPyClient):
         """
         method required by flwr.NumPyClient that receives the model coefficients ('parameters')
         and hyperparameters ('config') from the central server, and fits the client's model.
-        
+
         Returns updated coefficients, number of samples used for fitting, and fit metrics.
         """
         self.set_parameters(parameters, config)
@@ -96,7 +96,7 @@ class SGDRegressorClient(fl.client.NumPyClient):
         logging.info(f"CLIENT FIT {self.name} fit model with {n_samples} samples.")
         return federated_model_coefs, n_samples, fit_metrics
 
-    def evaluate(self, parameters, config) -> Tuple[float, int, Dict[str, float]]: 
+    def evaluate(self, parameters, config) -> Tuple[float, int, Dict[str, float]]:
         """
         method required by flwr.NumPyClient that receives the model coefficients ('parameters')
         and hyperparameters ('config') from the central server, and evaluates the client's model
@@ -119,14 +119,20 @@ class SGDRegressorClient(fl.client.NumPyClient):
             f"CLIENT EVAL {self.name} rmse: edge={edge_rmse} federated={federated_rmse}..."
         )
         return federated_rmse, len(self.X_test), metrics
-    
+
     def _set_model_zero_coefs(self, model: SGDRegressor, n_features: int) -> None:
         """flwr sever calls a random client for initial params, so we have to initialize them with zero to make sure they are not empty"""
-        model.intercept_ = np.array([0, ])
+        model.intercept_ = np.array(
+            [
+                0,
+            ]
+        )
         model.coef_ = np.zeros((n_features,))
         model.feature_names_in_ = np.array(self.X_train.columns.tolist())
 
-    def _set_model_coefs(self, model: SGDRegressor, parameters: List[np.ndarray]) -> None:
+    def _set_model_coefs(
+        self, model: SGDRegressor, parameters: List[np.ndarray]
+    ) -> None:
         """Sets the parameters of a sklean SGDRegressor model."""
         model.intercept_ = parameters[0]
         model.coef_ = parameters[1]
@@ -135,7 +141,7 @@ class SGDRegressorClient(fl.client.NumPyClient):
         """Returns the paramters of a sklearn LinearRegression model."""
         coefs = [model.intercept_, model.coef_]
         return coefs
-    
+
     def _get_rmse(self, model: SGDRegressor) -> float:
         return mean_squared_error(
             self.y_test.values, model.predict(self.X_test), squared=False
@@ -181,10 +187,7 @@ if __name__ == "__main__":
 
     while True:
         try:
-            fl.client.start_numpy_client(
-                server_address=server_address, 
-                client=client
-            )
+            fl.client.start_numpy_client(server_address=server_address, client=client)
         except Exception as e:
             logging.exception(e)
             logging.warning(
