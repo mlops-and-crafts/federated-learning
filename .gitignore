@@ -177,6 +177,8 @@ cython_debug/
 .AppleDouble
 .LSOverride
 .vscode/settings.json
+.ruff_cache/
+.vscode/
 
 
 # metrics store
