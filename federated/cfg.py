@@ -3,6 +3,7 @@ import uuid
 
 SERVER_PORT = os.environ.get("SERVER_PORT", 8080)
 USE_HOUSING_DATA = os.environ.get("USE_HOUSING_DATA", 1)
+CLUSTER_METHOD = os.environ.get("CLUSTER_METHOD", "kmeans")
 
 # server config
 SLEEP_TIME_BETWEEN_ROUNDS = os.environ.get("FEDERATED_SLEEP_TIME", 2)

@@ -169,6 +169,7 @@ if __name__ == "__main__":
         n_clusters=cfg.N_CLUSTERS,
         test_size=cfg.TEST_SIZE,
         seed=cfg.SEED,
+        strategy=cfg.CLUSTER_METHOD,
     ).get_random_cluster_train_test_data()
     logging.debug(f"X_train shape: {X_train.shape} y_train shape: {y_train.shape}")
     logging.debug(f"X_test shape: {X_test.shape} y_est shape: {y_test.shape}")

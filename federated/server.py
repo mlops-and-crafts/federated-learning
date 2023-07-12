@@ -130,6 +130,7 @@ if __name__ == "__main__":
         test_size=cfg.TEST_SIZE,
         n_clusters=cfg.N_CLUSTERS,
         seed=cfg.SEED,
+        strategy=cfg.CLUSTER_METHOD,
     ).get_train_test_data()
 
     central_model = LinearRegression().fit(X_train, y_train)
