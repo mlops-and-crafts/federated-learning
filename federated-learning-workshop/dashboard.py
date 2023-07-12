@@ -26,7 +26,7 @@ app.layout = dbc.Container(
             brand="MLOps and Crafts: Federated Learning Dashboard",
             color="primary",
             brand_href="https://www.meetup.com/nl-NL/mlops-and-crafts/",
-            style={"margin-bottom": 15},
+            style={"margin-bottom": 15, 'margin-top': 15},
         ),
         dbc.Card(
             [
