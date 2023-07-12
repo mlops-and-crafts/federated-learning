@@ -16,7 +16,7 @@ Python 3.9, docker
 * run `make run` from the commandline to start the `docker-compose` containers with a server, a number of clients and a dashboard.
 * The clients will start training on their local data and then send model coefficients to the server.
 * The server aggregates these coefficients and shares them back with the clients.
-* Metrics get logged in metrics.json, which can be tracked and displayed on the dashboard
+* Metrics get logged in `metrics.json`, which can be tracked and displayed on the dashboard
 * go to [http://localhost:8050](http://localhost:8050) to see the training progress
 * hit `ctrl-c` to detach the logs and run `make stop` to bring down the containers
 
@@ -27,8 +27,8 @@ Python 3.9, docker
 
 
 ## Credits
-This workshop was set up by (mlops-and-crafts)[https://www.meetup.com/nl-NL/mlops-and-crafts/] an initiative of (Thoughtworks Netherlands)[www.thoughtworks.com], by [@atroyanovsky](https://github.com/atroyanovsky) and [@saraperric85](https://github.com/saraperric85) and [@oegedijk](https://github.com/oegedijk).
+This workshop was set up by the [MLOps and Crafts meetup](https://www.meetup.com/nl-NL/mlops-and-crafts/), an initiative of [Thoughtworks Netherlands](www.thoughtworks.com), by [@atroyanovsky](https://github.com/atroyanovsky), [@saraperric85](https://github.com/saraperric85) and [@oegedijk](https://github.com/oegedijk).
 
 The workshop code is partly based on the [following flwr sklearn example](https://flower.dev/docs/quickstart-scikitlearn.html).
 
-Github: (https://github.com/mlops-and-crafts/federated-learning)[https://github.com/mlops-and-crafts/federated-learning]
+Github: [github.com/mlops-and-crafts/federated-learning](https://github.com/mlops-and-crafts/federated-learning)
