@@ -1,7 +1,9 @@
 [project]
-name = "mlops-and-crafts-federated-learning"
+name = "federated-learning-workshop"
 version = "0.1.0"
 authors = [
+    {name = "Artiom Troyanovksy", email = "artiom.troyanovsky@thoughtworks.com"},
+    {name = "Sara Perricone", email = "sara.perricone@thoughtworks.com"},
     {name = "Oege Dijk", email = "oege.dijk@thoughtworks.com"},
 ]
 description = "Demonstration of federated learning with flower for MlOps and Crafts meetup"
