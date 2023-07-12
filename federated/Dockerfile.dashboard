@@ -6,6 +6,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY cfg.py .
+COPY helpers.py .
 COPY dashboard.py .
 
 EXPOSE 8050
