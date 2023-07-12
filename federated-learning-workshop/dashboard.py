@@ -37,13 +37,13 @@ app.layout = dbc.Container(
                             id="config-table",
                             data=[
                                 {
-                                    "USE_HOUSING_DATA": cfg.USE_HOUSING_DATA,
+                                    "DATASET": cfg.DATASET,
                                     "CLUSTER_METHOD": cfg.CLUSTER_METHOD,
                                 }
                             ],
                             columns=[
                                 {"name": col, "id": col}
-                                for col in ["USE_HOUSING_DATA", "CLUSTER_METHOD"]
+                                for col in ["DATASET", "CLUSTER_METHOD"]
                             ],
                         ),
                     ],

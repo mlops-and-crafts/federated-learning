@@ -57,14 +57,14 @@ class ClusteredScaledDataGenerator:
 
         if strategy == "kmeans":
             self.cluster_ids = self._kmeans_cluster_ids()
-        elif strategy == "random":
-            self.cluster_ids = self._random_cluster_ids()
+        elif strategy == "iid":
+            self.cluster_ids = self._iid_cluster_ids()
         else:
             raise ValueError(
-                f"strategy {strategy} not supported. Use either 'kmeans' or 'random'"
+                f"strategy {strategy} not supported. Use either 'kmeans' or 'iid'"
             )
 
-    def _random_cluster_ids(self) -> np.ndarray:
+    def _iid_cluster_ids(self) -> np.ndarray:
         """assign each data point in X_train a random cluster id between 0 and self.n_clusters"""
         return np.random.choice(self.n_clusters, size=len(self.X_train))
 

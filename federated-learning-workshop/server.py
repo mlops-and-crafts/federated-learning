@@ -125,9 +125,10 @@ class CustomFedAvgStrategy(fl.server.strategy.FedAvg):
 
 
 if __name__ == "__main__":
-    if cfg.USE_HOUSING_DATA:
+    if cfg.DATASET == "california_housing":
         X, y = fetch_california_housing(return_X_y=True, as_frame=True)
-    else:
+        cluster_cols=['Latitude', 'Longitude']
+    elif cfg.DATASET == "synthetic":
         X, y, true_coefs = make_regression(
             n_samples=20_000,
             n_features=5,
@@ -138,7 +139,10 @@ if __name__ == "__main__":
             coef=True,
         )
         X = pd.DataFrame(X, columns=[f"feature_{i}" for i in range(X.shape[1])])
+        cluster_cols = None
         logger.info(f"TRUE COEFFICIENTS: {true_coefs}")
+    else:
+        raise ValueError(f"Invalid dataset name {cfg.DATASET}, cfg.DATASET must be 'california_housing' or 'synthetic'")
 
     X_train, X_test, y_train, y_test = ClusteredScaledDataGenerator(
         X,

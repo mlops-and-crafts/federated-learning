@@ -150,9 +150,10 @@ class SGDRegressorClient(fl.client.NumPyClient):
 
 if __name__ == "__main__":
     time.sleep(1)  # wait for server to start
-    if cfg.USE_HOUSING_DATA:
+    if cfg.DATASET == 'california_housing':
         X, y = fetch_california_housing(return_X_y=True, as_frame=True)
-    else:
+        cluster_cols=['Latitude', 'Longitude']
+    elif cfg.DATASET == 'synthetic':
         X, y, coef = make_regression(
             n_samples=20_000,
             n_features=5,
@@ -163,22 +164,20 @@ if __name__ == "__main__":
             coef=True,
         )
         X = pd.DataFrame(X, columns=[f"feature_{i}" for i in range(X.shape[1])])
+        cluster_cols = None
+    else:
+        raise ValueError(f"Unknown dataset {cfg.DATASET}, DATASET must be 'california_housing' or 'synthetic'")
 
-    (
-        X_train,
-        X_test,
-        y_train,
-        y_test,
-    ) = ClusteredScaledDataGenerator(
-        pd.DataFrame(X),
-        pd.Series(y),
+    X_train, X_test, y_train, y_test = ClusteredScaledDataGenerator(
+        X,
+        y,
         n_clusters=cfg.N_CLUSTERS,
         test_size=cfg.TEST_SIZE,
         seed=cfg.SEED,
         strategy=cfg.CLUSTER_METHOD,
+        cluster_cols=cluster_cols,
+        
     ).get_random_cluster_train_test_data()
-    logging.debug(f"X_train shape: {X_train.shape} y_train shape: {y_train.shape}")
-    logging.debug(f"X_test shape: {X_test.shape} y_est shape: {y_test.shape}")
 
     client = SGDRegressorClient(
         X_train, X_test, y_train, y_test, train_sample=cfg.TRAIN_SAMPLE

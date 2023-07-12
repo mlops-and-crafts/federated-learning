@@ -2,8 +2,8 @@ import os
 import uuid
 
 SERVER_PORT = os.environ.get("SERVER_PORT", 8080)
-USE_HOUSING_DATA = os.environ.get("USE_HOUSING_DATA", 1)
-CLUSTER_METHOD = os.environ.get("CLUSTER_METHOD", "kmeans")
+DATASET = os.environ.get("DATASET", "california_housing") # 'california_housing' or 'synthetic'
+CLUSTER_METHOD = os.environ.get("CLUSTER_METHOD", "kmeans") # 'kmeans' or 'iid'
 SEED = os.environ.get("CLIENT_SEED", 42)
 
 # server config
