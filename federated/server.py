@@ -16,13 +16,10 @@ from sklearn.metrics import mean_squared_error
 from helpers import ClusteredScaledDataGenerator, MetricsJSONstore, get_test_rmse_from_parameters
 import cfg
 
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("flwr")
-filehandler = logging.FileHandler(f'{cfg.LOGFILE_DIR}/server.log', mode='w')
-filehandler.setLevel(logging.INFO)
-logger.addHandler(filehandler)
 
 metrics = MetricsJSONstore(cfg.METRICS_FILE)
-            
 
 def evaluate_fn(server_round, parameters, config):
     """
@@ -39,10 +36,10 @@ def evaluate_fn(server_round, parameters, config):
     federated_rmse = get_test_rmse_from_parameters(parameters, config, X_test, y_test)
     metrics_dict = {
         "server_round": server_round, 
-        "coefs": parameters[1].tolist(),
+        "coefs": dict(zip(X_test.columns.tolist(), parameters[1].tolist())),
         "rmse": federated_rmse, 
         "central_rmse": central_rmse,
-        "central_coefs": central_coefs,
+        "central_coefs": dict(zip(X_test.columns.tolist(), central_coefs)),
     }
 
     logger.info(f"SERVER Round {server_round} RMSE: {federated_rmse} coefs = {parameters}")
@@ -105,9 +102,7 @@ class CustomFedAvgStrategy(fl.server.strategy.FedAvg):
                 "client_name": result.metrics["client_name"],
                 "n_samples": result.metrics["n_samples"],
                 "edge_rmse": result.metrics["edge_rmse"],
-                "federated_rmse": result.metrics["federated_rmse"],
-                "central_rmse": result.metrics["central_rmse"],
-                
+                "federated_rmse": result.metrics["federated_rmse"],        
             }
             metrics.log_client_evaluate_metrics(client_evaluate_metrics)
         time.sleep(cfg.SLEEP_TIME_BETWEEN_ROUNDS)

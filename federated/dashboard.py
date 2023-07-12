@@ -7,8 +7,13 @@ import numpy as np
 import pandas as pd
 
 from dash import Dash, html, dcc, no_update, dash_table
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
+from dash.exceptions import PreventUpdate
+import dash_bootstrap_components as dbc
+
+
 import plotly.express as px
+import plotly.graph_objs as go
 
 import cfg
 from helpers import MetricsJSONstore
@@ -16,95 +21,231 @@ from helpers import MetricsJSONstore
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("federated-dashboard")
 
-app = Dash(__name__)
+app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 app.title = "Federated Learning Dashboard"
-app.layout = html.Div([
-    html.Div([
-        dcc.Graph(id='federated-rmse-graph'),
-    ]),
-    html.Div([
-        dcc.Graph(id='central-client-rmse-graph'),
-    ]),
-    html.Div([
-        dcc.Graph(id='client-federated-rmse-graph'),
-    ]),
-    html.Div([
-        dcc.Graph(id='client-edge-rmse-graph'),
-    ]),
-    html.Div([
-        dcc.Graph(id='client-central-rmse-graph'),
-    ]),
-    html.Div([
-        dash_table.DataTable(id='latest-client-metrics-table'),
-    ]),
+app.layout = dbc.Container([
+    dbc.NavbarSimple(
+        brand="Federated Learning Dashboard",
+        color="primary",
+        style={"margin-bottom": 15},
+    ),
+    dbc.Card([
+        dbc.CardHeader("Federated vs Centralized model comparison"),
+        dbc.CardBody([
+            dbc.Row([
+                dbc.Col([
+                    dcc.Graph(id='federated-rmse-graph'),
+                ]),
+                dbc.Col([
+                    dcc.Graph(id='federated-coefs-graph'),
+                ])
+            ]),
+        ]),
+        
+    ], style={"margin-bottom": 15}),
+    dbc.Card([
+        dbc.CardHeader("Federated vs Edge local performance comparison"),
+        dbc.CardBody([
+            dbc.Row([
+                dbc.Col([
+                    dcc.Graph(id='client-federated-rmse-graph'),
+                ]),
+                dbc.Col([
+                    dcc.Graph(id='client-edge-rmse-graph'),
+                ])
+            ]),
+        ]),
+    ], style={"margin-bottom": 15}),
+    dbc.Card([
+        dbc.CardHeader("Client metrics"),
+        dbc.CardBody([
+            dbc.Row([
+                dbc.Col([
+                    dash_table.DataTable(id='latest-client-metrics-table'),
+                ]),
+                dbc.Col([
+                    dcc.Dropdown(id='client-dropdown'),
+                    dcc.Graph(id='client-rmse-comparison-graph'),
+                ]),
+            ]),
+        ]),
+    ], style={"margin-bottom": 15}),
     dcc.Interval(
         id='interval-ticker',
-        interval=1000, # in milliseconds
+        interval=1000, # update and reload json metrics file every second
         n_intervals=0
-    )
+    ),
+    dcc.Store(id='metrics-store'),
 ])
 
 @app.callback(
-    Output('federated-rmse-graph', 'figure'), 
-    Output('central-client-rmse-graph', 'figure'), 
-    Output('client-federated-rmse-graph', 'figure'), 
-    Output('client-edge-rmse-graph', 'figure'), 
-    Output('client-central-rmse-graph', 'figure'), 
-    Output('latest-client-metrics-table', 'data'),
+    Output('metrics-store', 'data'),
     Input('interval-ticker', 'n_intervals')
 )
-def update_data(n_intervals):
-    try:
-        metrics = MetricsJSONstore(cfg.METRICS_FILE).load()
-        
-        server_metrics_df = pd.DataFrame(metrics["server"])
-        server_federated_fig = px.line(
-            server_metrics_df, x="server_round", y="rmse", 
-            title='RMSE against test data for federated model'
-        ) if not server_metrics_df.empty else no_update
-        
-        client_fit_metrics_df = pd.DataFrame(metrics["clients_fit"])
-        client_central_fig = px.line(
-            client_fit_metrics_df, x="server_round", y="client_rmse", 
-            title='Central RMSE against test data for federated client models',
-            color="client_name",
-        ) if not client_fit_metrics_df.empty else no_update
+def update_metrics(n_intervals):
+    metrics = MetricsJSONstore(cfg.METRICS_FILE).load()
+    logger.debug("Latest metrics loaded from file")
+    return metrics
 
+@app.callback(
+    Output('client-dropdown', 'options'),
+    Output('client-dropdown', 'value'),
+    Input('metrics-store', 'data'),
+    State('client-dropdown', 'value'),
+)
+def update_client_dropdown(metrics, client):
+    if metrics is None:
+        return [], no_update
+    client_names = list(set([client['client_name'] for client in metrics['clients_evaluate']]))
+    if not client:
+        return client_names, client_names[0]
+    return client_names, no_update
+
+@app.callback(
+    Output('federated-rmse-graph', 'figure'), 
+    Input('metrics-store', 'data'),
+)
+def updated_federated_graph(metrics):
+    try:
+        server_metrics_df = pd.DataFrame(metrics["server"])
+        client_fit_metrics_df = pd.DataFrame(metrics["clients_fit"])
+
+        if not server_metrics_df.empty:
+            server_federated_fig = go.Figure()
+            server_federated_fig.add_traces([
+                go.Scatter(
+                    x= server_metrics_df['server_round'].values,
+                    y=server_metrics_df['rmse'].values,
+                    name='Federated Model',
+                    line=dict(width=4) 
+                ),
+                go.Scatter(
+                    x= server_metrics_df['server_round'].values,
+                    y=server_metrics_df['central_rmse'].values,
+                    name='Central Model Baseline',
+                    line=dict(width=2) 
+                ),
+            ])
+
+            for client in client_fit_metrics_df['client_name'].unique():
+                sub_df = client_fit_metrics_df[client_fit_metrics_df['client_name']==client]
+                server_federated_fig.add_trace(
+                    go.Scatter(
+                        x=sub_df['server_round'].values,
+                        y=sub_df['client_rmse'].values,
+                        name=client,
+                        line=dict(dash='dash')
+                    )
+                )
+            server_federated_fig.update_layout(title='federated RMSE against central test set')
+            return server_federated_fig
+        else:
+            raise Exception("Server metrics dataframe is empty")
+    except:
+        logger.exception("Failed to display federated graph in dashboard")
+        raise PreventUpdate
+
+
+@app.callback(
+    Output('federated-coefs-graph', 'figure'), 
+    Input('metrics-store', 'data'),
+)
+def updated_federated_graph(metrics):
+    try:
+        server_metrics_df = pd.DataFrame(metrics["server"])
+
+        if not server_metrics_df.empty:
+            server_metrics_df.sort_values("server_round", inplace=True)
+            federated_coefs = server_metrics_df.iloc[-1]["coefs"]
+            central_coefs = server_metrics_df.iloc[-1]["central_coefs"]
+
+            fig = go.Figure()
+            fig.add_traces([
+                go.Bar(
+                    x=list(federated_coefs.keys()),
+                    y=list(federated_coefs.values()),
+                    name='Federated Model',
+                ),
+                go.Bar(
+                    x=list(central_coefs.keys()),
+                    y=list(central_coefs.values()),
+                    name='Central Model',
+                )
+            ])
+            fig.update_layout(title='Federated vs Central Model Coefficients')
+            return fig
+        else:
+            raise PreventUpdate
+    except:
+        logger.exception("Failed to display federated coefficient graph in dashboard")
+        raise PreventUpdate
+
+
+@app.callback(
+    Output('client-federated-rmse-graph', 'figure'), 
+    Output('client-edge-rmse-graph', 'figure'), 
+    Output('latest-client-metrics-table', 'data'),
+    Input('metrics-store', 'data'),
+)
+def update_client_graphs_and_table(metrics):
+    try:
         client_eval_metrics_df = pd.DataFrame(metrics["clients_evaluate"])
 
         client_federated_fig = px.line(
             client_eval_metrics_df, x="server_round", y="federated_rmse", 
-            title='Federated RMSE against test data for client models',
+            title='Federated RMSE against local test data for client models',
             color="client_name",
         ) if not client_eval_metrics_df.empty else no_update
         client_edge_fig = px.line(
             client_eval_metrics_df, x="server_round", y="edge_rmse", 
-            title='Edge RMSE against test data for client models',
-            color="client_name",
-        ) if not client_eval_metrics_df.empty else no_update
-        client_central_fig = px.line(
-            client_eval_metrics_df, x="server_round", y="central_rmse", 
-            title='Central RMSE against test data for client models',
+            title='Edge RMSE against local test data for client models',
             color="client_name",
         ) if not client_eval_metrics_df.empty else no_update
 
         last_client_update_df = (
             client_eval_metrics_df[
                 client_eval_metrics_df.server_round == client_eval_metrics_df.server_round.max()
-            ]
+            ].sort_values("client_name")
         ) if not client_eval_metrics_df.empty else pd.DataFrame()
         return (
-            server_federated_fig, 
-            client_central_fig,
             client_federated_fig, 
             client_edge_fig, 
-            client_central_fig, 
             last_client_update_df.to_dict('records'),
         )  
+    except:
+        logger.exception("Failed to display client graphs in dashboard")
+        raise PreventUpdate
     
-    except Exception as e:
-        logger.error("Failed to display rmse graphs in dashboard:", e)
-        return no_update, no_update, no_update, no_update, no_update, no_update
+@app.callback(
+    Output('client-rmse-comparison-graph', 'figure'), 
+    Input('metrics-store', 'data'),
+    State('client-dropdown', 'value'),
+)
+def update_client_graphs_and_table(metrics, client):
+    if client is not None:
+        try:
+            client_eval_metrics_df = pd.DataFrame(metrics["clients_evaluate"])
+
+            fig = go.Figure()
+            fig.add_trace(
+                go.Scatter(
+                    x=client_eval_metrics_df[client_eval_metrics_df['client_name']==client]['server_round'].values,
+                    y=client_eval_metrics_df[client_eval_metrics_df['client_name']==client]['federated_rmse'].values,
+                    name='Federated RMSE',
+                )
+            )
+            fig.add_trace(
+                go.Scatter(
+                    x=client_eval_metrics_df[client_eval_metrics_df['client_name']==client]['server_round'].values,
+                    y=client_eval_metrics_df[client_eval_metrics_df['client_name']==client]['edge_rmse'].values,
+                    name='Edge RMSE',
+                )
+            )
+            fig.update_layout(title=f'RMSE against local test data for {client}')
+            return fig
+        except:
+            logger.exception("Failed to display client comparison graphs in dashboard")
+    raise PreventUpdate
 
 if __name__ == "__main__":
     app.run('0.0.0.0', port=cfg.DASHBOARD_PORT)

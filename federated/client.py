@@ -106,20 +106,19 @@ class SGDRegressorClient(fl.client.NumPyClient):
         """
         edge_rmse = self._get_rmse(self.edge_model)
         federated_rmse = self._get_rmse(self.federated_model)
-        central_rmse = get_test_rmse_from_parameters(parameters, config, self.X_test, self.y_test)
 
+        # can only return singular values such as bool, int, float, etc in metrics dict, not e.g. lists:
         metrics = {
             "client_name": self.name,
             "n_samples": len(self.X_test),
             "edge_rmse": edge_rmse,
             "federated_rmse": federated_rmse,
-            "central_rmse": central_rmse,
         }
 
         logging.info(
-            f"CLIENT EVAL {self.name} rmse: edge={edge_rmse} federated={federated_rmse} central={central_rmse}..."
+            f"CLIENT EVAL {self.name} rmse: edge={edge_rmse} federated={federated_rmse}..."
         )
-        return central_rmse, len(self.X_test), metrics
+        return federated_rmse, len(self.X_test), metrics
     
     def _set_model_zero_coefs(self, model: SGDRegressor, n_features: int) -> None:
         """flwr sever calls a random client for initial params, so we have to initialize them with zero to make sure they are not empty"""
