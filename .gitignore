@@ -178,9 +178,6 @@ cython_debug/
 .LSOverride
 .vscode/settings.json
 
-data
-data/*
 
-# Roman stuff
-server_src/
-federated/metrics.json
+# metrics store
+federated-learning-workshop/metrics.json
