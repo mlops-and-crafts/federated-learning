@@ -24,7 +24,7 @@ services:
     environment:
       SERVER_ADDRESS: "server"
     deploy:
-      replicas: 2
+      replicas: 8
     stop_signal: SIGINT
   dashboard:
     image: federated-dashboard
