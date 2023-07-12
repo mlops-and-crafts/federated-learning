@@ -48,7 +48,7 @@ build:
 
 # Lint the python code using ruff and Dockerfiles using hadolint
 lint:
-	ruff federated
-	docker run --rm -i hadolint/hadolint < federated/Dockerfile.client
-	docker run --rm -i hadolint/hadolint < federated/Dockerfile.server
-	docker run --rm -i hadolint/hadolint < federated/Dockerfile.dashboard
+	ruff federated-learning-workshop
+	docker run --rm -i hadolint/hadolint < federated-learning-workshop/Dockerfile.client
+	docker run --rm -i hadolint/hadolint < federated-learning-workshop/Dockerfile.server
+	docker run --rm -i hadolint/hadolint < federated-learning-workshop/Dockerfile.dashboard

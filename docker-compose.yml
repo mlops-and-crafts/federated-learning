@@ -6,10 +6,10 @@ services:
   server: # You will need to build the server if you have not done so. Run "docker build -t server server_src"
     image: federated-server
     build:
-      context: ./federated
+      context: ./federated-learning-workshop
       dockerfile: Dockerfile.server
     volumes:
-      - ./federated:/usr/src/app
+      - ./federated-learning-workshop:/usr/src/app
     ports:
       - 8080:8080
     restart: on-failure
@@ -17,10 +17,10 @@ services:
   client: # You can use the client from the solutions of exercise 2: "docker build -t client 'solutions/exercise 2/'"
     image: federated-client
     build:
-      context: ./federated
+      context: ./federated-learning-workshop
       dockerfile: Dockerfile.client
     volumes:
-      - ./federated:/usr/src/app
+      - ./federated-learning-workshop:/usr/src/app
     environment:
       SERVER_ADDRESS: "server"
     deploy:
@@ -29,10 +29,10 @@ services:
   dashboard:
     image: federated-dashboard
     build:
-      context: ./federated
+      context: ./federated-learning-workshop
       dockerfile: Dockerfile.dashboard
     volumes:
-      - ./federated:/usr/src/app
+      - ./federated-learning-workshop:/usr/src/app
     ports:
       - 8050:8050
     environment:

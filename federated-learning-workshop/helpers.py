@@ -102,7 +102,7 @@ class ClusteredScaledDataGenerator:
         """Return X, y with where self.cluster_ids equals a random cluster_id"""
         np.random.seed()
         X_train = pd.DataFrame()
-        while len(X_train) < 50:
+        while len(X_train) < cfg.TRAIN_SAMPLE:
             cluster_id = np.random.choice(self.n_clusters)
             X_train, X_test, y_train, y_test = self.get_cluster_train_test_data(
                 cluster_id
