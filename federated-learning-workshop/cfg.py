@@ -1,5 +1,5 @@
 import os
-import uuid 
+import uuid
 
 SERVER_PORT = os.environ.get("SERVER_PORT", 8080)
 USE_HOUSING_DATA = os.environ.get("USE_HOUSING_DATA", 1)
@@ -11,7 +11,7 @@ SLEEP_TIME_BETWEEN_ROUNDS = os.environ.get("FEDERATED_SLEEP_TIME", 2)
 MIN_CLIENTS = os.environ.get("FEDERATED_MIN_CLIENTS", 2)
 NUM_ROUNDS = os.environ.get("FEDERATED_NUM_ROUNDS", 2000)
 ROUND_TIMEOUT = os.environ.get("FEDERATED_ROUND_TIMEOUT", 5)
-METRICS_FILE = os.environ.get("METRICS_FILE", 'metrics.json')
+METRICS_FILE = os.environ.get("METRICS_FILE", "metrics.json")
 
 # client config
 CLIENT_ID = f"client-{os.environ.get('CLIENT_ID', str(uuid.uuid4())[-5:])}"

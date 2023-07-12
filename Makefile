@@ -13,7 +13,12 @@ help:
 	} \
 	{ lastLine = $$0 }' $(MAKEFILE_LIST)
 
-# Run the entire application locally
+# install dev dependencies and set pre-commit hook
+install:
+	pip install ruff black pre-commit
+	pre-commit install
+
+# Run the entire application locally, dashboard on localhost:8050
 run:
 	docker-compose up -d && docker-compose logs -f -t
 
@@ -25,7 +30,7 @@ server:
 clients:
 	docker-compose up client -d
 
-# start only the dashboard
+# start only the dashboard container
 dashboard:
 	docker-compose up dashboard -d
 
@@ -45,6 +50,10 @@ log:
 # rebuild the containers without cache
 build:
 	docker-compose build --no-cache
+
+# format the python code using black
+format:
+	black federated-learning-workshop
 
 # Lint the python code using ruff and Dockerfiles using hadolint
 lint:
