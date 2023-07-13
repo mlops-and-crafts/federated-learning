@@ -9,20 +9,28 @@ Federated Learning is a development in machine learning that allows models to be
 The decentralized nature of federated learning brings new challanges with regards to deploying, packaging, monitoring and training these models. In this workshop we will be discussing these challenges, and we will show you how you could tackle them.
 
 ## Requirements
-Python 3.9, docker
+python, docker
 
-## Usage
+## Part one: basic setup with limited monitoring
 * Clone the repository
-* run `make run` from the commandline to start the `docker-compose` containers with a server, a number of clients and a dashboard.
-* The clients will start training on their local data and then send model coefficients to the server.
-* The server aggregates these coefficients and shares them back with the clients.
-* Metrics get logged in `metrics.json`, which can be tracked and displayed on the dashboard
-* go to [http://localhost:8050](http://localhost:8050) to see the training progress
-* hit `ctrl-c` to detach the logs and run `make stop` to bring down the containers
+* run `make part_1` to run the first part of the demo
+* The dockerized clients will start training on their local data and then send model coefficients to the dockerized flower server.
+* The flower server aggregates these coefficients and shares them back with the clients.
+* There is very limited monitoring and logging, only metrics logging to stdout on the client side
+* hit `ctrl-c` to stop
+
+## Part two: adding a monitoring dashboard
+* run `make part_2` to run the second part of the demo
+* The server now has access to the full training set and a test set to evaluate performance against
+* A central model is fit on the full training set to compare performance and coefficients against
+* The clients split their data into train and test data, and report metrics for both an local-only (edge) train model and the federated model
+* Server side metrics get stored to a metrics.json file
+* A dashboard is launched on [http://localhost:8050](http://localhost:8050) where training progress can be monitored
+* hit `ctrl-c` to stop
+
 
 ## Dev
 * Run `make install` to install python dependencies for linting, formatting and pre-commit hooks (ruff and black)
-* While developing you can run `make restart` to shut down and relaunch the containers
 * Run a bare `make` to see other options (such as linting, formatting, etc)
 
 

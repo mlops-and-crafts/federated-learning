@@ -13,51 +13,30 @@ help:
 	} \
 	{ lastLine = $$0 }' $(MAKEFILE_LIST)
 
-# install dev dependencies and set pre-commit hook
+# install dev dependencies and install pre-commit hooks
 install:
 	pip install ruff black pre-commit
 	pre-commit install
 
-# Run the entire application locally, dashboard on localhost:8050
-run:
-	docker-compose up -d && docker-compose logs -f -t
+# run the first part of the workshop locally
+part_1:
+	docker-compose -f part1/docker-compose.yml up
 
-# Start only the server container
-server:
-	docker-compose up server -d
-
-# Start only the client containers
-clients:
-	docker-compose up client -d
-
-# start only the dashboard container
-dashboard:
-	docker-compose up dashboard -d
-
-# Stop and remove all containers
-stop:
-	docker-compose down
-
-# Restart the application
-restart:
-	docker-compose down
-	docker-compose up -d && docker-compose logs -f -t
-
-# Show the logs of all containers
-log:
-	docker-compose logs -f -t
-
-# rebuild the containers without cache
-build:
-	docker-compose build --no-cache
+# run the second part of the workshop locally
+part_2:
+	docker-compose -f part2/docker-compose.yml up
 
 # format the python code using black
 format:
-	black federated-learning-workshop
+	black part1
+	black part2
 
 # Lint the python code using ruff and Dockerfiles using hadolint
 lint:
-	ruff federated-learning-workshop
-	docker run --rm -i hadolint/hadolint < federated-learning-workshop/Dockerfile.client
-	docker run --rm -i hadolint/hadolint < federated-learning-workshop/Dockerfile.server
-	docker run --rm -i hadolint/hadolint < federated-learning-workshop/Dockerfile.dashboard
+	ruff part1
+	ruff part2
+	docker run --rm -i hadolint/hadolint < part1/Dockerfile.client
+	docker run --rm -i hadolint/hadolint < part1/Dockerfile.server
+	docker run --rm -i hadolint/hadolint < part2/Dockerfile.client
+	docker run --rm -i hadolint/hadolint < part2/Dockerfile.server
+	docker run --rm -i hadolint/hadolint < part2/Dockerfile.dashboard

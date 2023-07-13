@@ -23,7 +23,7 @@ class SGDRegressorClient(fl.client.NumPyClient):
         X_test: pd.DataFrame,
         y_train: np.ndarray,
         y_test: np.ndarray,
-        train_sample: int = None,
+        train_sample: int = cfg.TRAIN_SAMPLE,
         name=cfg.CLIENT_ID,
     ):
         self.X_train = X_train
@@ -122,11 +122,7 @@ class SGDRegressorClient(fl.client.NumPyClient):
 
     def _set_model_zero_coefs(self, model: SGDRegressor, n_features: int) -> None:
         """flwr sever calls a random client for initial params, so we have to initialize them with zero to make sure they are not empty"""
-        model.intercept_ = np.array(
-            [
-                0,
-            ]
-        )
+        model.intercept_ = np.array([0,])
         model.coef_ = np.zeros((n_features,))
         model.feature_names_in_ = np.array(self.X_train.columns.tolist())
 
@@ -147,9 +143,7 @@ class SGDRegressorClient(fl.client.NumPyClient):
             self.y_test.values, model.predict(self.X_test), squared=False
         )
 
-
-if __name__ == "__main__":
-    time.sleep(1)  # wait for server to start
+def get_X_y():
     if cfg.DATASET == 'california_housing':
         X, y = fetch_california_housing(return_X_y=True, as_frame=True)
         cluster_cols=['Latitude', 'Longitude']
@@ -178,14 +172,16 @@ if __name__ == "__main__":
         cluster_cols=cluster_cols,
         
     ).get_random_cluster_train_test_data()
+    return X_train, X_test, y_train, y_test
 
-    client = SGDRegressorClient(
-        X_train, X_test, y_train, y_test, train_sample=cfg.TRAIN_SAMPLE
-    )
-    server_address = f"{cfg.SERVER_ADDRESS}:{cfg.SERVER_PORT}"
 
+if __name__ == "__main__":
+    X_train, X_test, y_train, y_test = get_X_y()
+    time.sleep(1)  # wait for server to start
     while True:
         try:
+            client = SGDRegressorClient(X_train, X_test, y_train, y_test)
+            server_address = f"{cfg.SERVER_ADDRESS}:{cfg.SERVER_PORT}"
             fl.client.start_numpy_client(server_address=server_address, client=client)
         except Exception as e:
             logging.exception(e)

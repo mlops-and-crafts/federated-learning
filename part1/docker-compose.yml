@@ -1,0 +1,28 @@
+# Run this docker compose to simulate multiple clients. Add as many as you want by changing the number of replicas below.
+# If you're running the clients and server locally (localhost), make sure you specify the IP adress as 0.0.0.0
+# You will need to build the server if you have not done so. Run "docker build -t server server_src"
+
+services:
+  server: # You will need to build the server if you have not done so. Run "docker build -t server server_src"
+    image: federated-server
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    volumes:
+      - ./:/usr/src/app
+    ports:
+      - 8080:8080
+    restart: on-failure
+    stop_signal: SIGINT
+  client: # You can use the client from the solutions of exercise 2: "docker build -t client 'solutions/exercise 2/'"
+    image: federated-client
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    volumes:
+      - ./:/usr/src/app
+    environment:
+      SERVER_ADDRESS: "server"
+    deploy:
+      replicas: 2
+    stop_signal: SIGINT
